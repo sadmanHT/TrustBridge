@@ -29,6 +29,18 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
   const ipfsUrl = cid ? `https://ipfs.io/ipfs/${cid}` : undefined;
 
   const handleDownloadDiploma = useCallback(async () => {
+    // Defensive checks
+    if (!hash || !/^0x[0-9a-fA-F]{64}$/.test(hash)) {
+      toast({
+        title: "Invalid Document Hash",
+        description: "The document hash is invalid or missing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let url: string | null = null;
+    
     try {
       // Show generating toast
       toast({
@@ -79,7 +91,7 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
       
       // Ensure we only call browser APIs on the client
       if (typeof window !== 'undefined') {
-        const url = URL.createObjectURL(blob);
+        url = URL.createObjectURL(blob);
         
         // Create download link
         const link = document.createElement('a');
@@ -88,9 +100,6 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        // Clean up
-        URL.revokeObjectURL(url);
       }
 
       // Show success toast
@@ -106,6 +115,11 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
         description: error instanceof Error ? error.message : "Failed to generate diploma",
         variant: "destructive",
       });
+    } finally {
+      // Always revoke the object URL to prevent memory leaks
+      if (url && typeof window !== 'undefined') {
+        URL.revokeObjectURL(url);
+      }
     }
   }, [hash, txHash, fileName, verificationUrl, toast]);
 
