@@ -73,19 +73,25 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
       const pdfBytes = await generateDiplomaPDF(diplomaData);
 
       // Create blob and download
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
+      // pdfBytes: Uint8Array
+      const arrayBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength);
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       
-      // Create download link
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'TrustBridge-Diploma.pdf';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up
-      URL.revokeObjectURL(url);
+      // Ensure we only call browser APIs on the client
+      if (typeof window !== 'undefined') {
+        const url = URL.createObjectURL(blob);
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'TrustBridge-Diploma.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        URL.revokeObjectURL(url);
+      }
 
       // Show success toast
       toast({
