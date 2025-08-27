@@ -1,0 +1,127 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "issuer": "Emisor",
+    "verifier": "Verificador",
+    "wallet": "Billetera",
+    "admin": "Administrador",
+    "analytics": "Analíticas"
+  },
+  "hero": {
+    "title": "TrustBridge",
+    "subtitle": "Gestión Segura de Credenciales Digitales",
+    "description": "Emite, verifica y gestiona credenciales digitales en blockchain con total transparencia y seguridad.",
+    "getStarted": "Comenzar",
+    "learnMore": "Saber Más"
+  },
+  "buttons": {
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "download": "Descargar",
+    "upload": "Subir",
+    "connect": "Conectar Billetera",
+    "disconnect": "Desconectar",
+    "issue": "Emitir Credencial",
+    "verify": "Verificar Credencial",
+    "revoke": "Revocar",
+    "export": "Exportar",
+    "refresh": "Actualizar"
+  },
+  "labels": {
+    "name": "Nombre",
+    "email": "Correo Electrónico",
+    "address": "Dirección",
+    "status": "Estado",
+    "date": "Fecha",
+    "type": "Tipo",
+    "issuer": "Emisor",
+    "recipient": "Destinatario",
+    "credentialId": "ID de Credencial",
+    "transactionHash": "Hash de Transacción",
+    "blockNumber": "Número de Bloque",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "language": "Idioma"
+  },
+  "status": {
+    "active": "Activo",
+    "revoked": "Revocado",
+    "pending": "Pendiente",
+    "verified": "Verificado",
+    "invalid": "Inválido",
+    "loading": "Cargando...",
+    "success": "Éxito",
+    "error": "Error",
+    "connected": "Conectado",
+    "disconnected": "Desconectado"
+  },
+  "toasts": {
+    "success": {
+      "credentialIssued": "Credencial emitida exitosamente",
+      "credentialRevoked": "Credencial revocada exitosamente",
+      "credentialVerified": "Credencial verificada exitosamente",
+      "walletConnected": "Billetera conectada exitosamente",
+      "dataSaved": "Datos guardados exitosamente",
+      "dataExported": "Datos exportados exitosamente"
+    },
+    "error": {
+      "credentialIssueFailed": "Error al emitir credencial",
+      "credentialRevokeFailed": "Error al revocar credencial",
+      "credentialVerifyFailed": "Error al verificar credencial",
+      "walletConnectionFailed": "Error al conectar billetera",
+      "dataLoadFailed": "Error al cargar datos",
+      "invalidInput": "Entrada inválida proporcionada",
+      "networkError": "Error de red ocurrido",
+      "unexpectedError": "Ocurrió un error inesperado"
+    },
+    "warning": {
+      "unsavedChanges": "Tienes cambios sin guardar",
+      "confirmDelete": "¿Estás seguro de que quieres eliminar este elemento?",
+      "confirmRevoke": "¿Estás seguro de que quieres revocar esta credencial?"
+    }
+  },
+  "analytics": {
+    "title": "Panel de Analíticas",
+    "kpis": {
+      "totalIssued": "Total Emitidas",
+      "totalRevoked": "Total Revocadas",
+      "sessionVerifications": "Verificaciones de Sesión"
+    },
+    "charts": {
+      "issuedOverTime": "Credenciales Emitidas en el Tiempo",
+      "revokedOverTime": "Credenciales Revocadas en el Tiempo",
+      "verificationsOverTime": "Intentos de Verificación en el Tiempo"
+    },
+    "timeFilter": {
+      "7days": "Últimos 7 Días",
+      "30days": "Últimos 30 Días",
+      "allTime": "Todo el Tiempo"
+    },
+    "noData": "No hay datos disponibles para el período seleccionado",
+    "exportCsv": "Exportar a CSV"
+  },
+  "forms": {
+    "required": "Este campo es requerido",
+    "invalidEmail": "Por favor ingresa un correo electrónico válido",
+    "invalidAddress": "Por favor ingresa una dirección blockchain válida",
+    "minLength": "Se requieren mínimo {{count}} caracteres",
+    "maxLength": "Máximo {{count}} caracteres permitidos"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "noResults": "No se encontraron resultados",
+    "tryAgain": "Intentar de Nuevo",
+    "goBack": "Volver",
+    "close": "Cerrar",
+    "open": "Abrir",
+    "yes": "Sí",
+    "no": "No",
+    "ok": "OK",
+    "or": "o",
+    "and": "y"
+  }
+}

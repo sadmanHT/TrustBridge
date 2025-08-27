@@ -1,0 +1,34 @@
+{
+  "name": "@trustbridge/contracts",
+  "version": "1.0.0",
+  "description": "TrustBridge Smart Contracts",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "contracts:deploy:sepolia": "hardhat run --network sepolia scripts/deploy.ts",
+    "node": "hardhat node",
+    "clean": "hardhat clean"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@types/chai": "^5.2.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.11",
+    "dotenv": "^16.3.0",
+    "hardhat": "^2.19.0",
+    "typescript": "^5.9.2"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "smart-contracts",
+    "solidity"
+  ],
+  "author": "TrustBridge Team",
+  "license": "MIT"
+}

@@ -1,0 +1,158 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient Background -->
+  <defs>
+    <linearGradient id="verifierBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c2d12;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#dc2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f97316;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="shieldGlow" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Main Background -->
+  <rect width="1920" height="1080" fill="url(#verifierBgGradient)"/>
+  
+  <!-- Shield Icons Pattern -->
+  <g opacity="0.15">
+    <!-- Large Shields -->
+    <g transform="translate(200, 150)">
+      <path d="M0,10 Q0,0 10,0 L50,0 Q60,0 60,10 L60,40 Q60,70 30,80 Q0,70 0,40 Z" fill="#ffffff" opacity="0.3"/>
+      <path d="M15,25 L25,35 L45,15" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    
+    <g transform="translate(1500, 200)">
+      <path d="M0,8 Q0,0 8,0 L42,0 Q50,0 50,8 L50,32 Q50,56 25,64 Q0,56 0,32 Z" fill="#ffffff" opacity="0.25"/>
+      <path d="M12,20 L20,28 L38,12" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.4"/>
+    </g>
+    
+    <g transform="translate(300, 750)">
+      <path d="M0,12 Q0,0 12,0 L58,0 Q70,0 70,12 L70,45 Q70,78 35,88 Q0,78 0,45 Z" fill="#ffffff" opacity="0.2"/>
+      <path d="M17,30 L28,41 L53,18" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.4"/>
+    </g>
+    
+    <g transform="translate(1600, 700)">
+      <path d="M0,9 Q0,0 9,0 L46,0 Q55,0 55,9 L55,35 Q55,61 27.5,70 Q0,61 0,35 Z" fill="#ffffff" opacity="0.3"/>
+      <path d="M13,22 L22,31 L42,13" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+    </g>
+  </g>
+  
+  <!-- Magnifying Glass Icons -->
+  <g opacity="0.12">
+    <g transform="translate(800, 250)">
+      <circle cx="0" cy="0" r="25" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.4"/>
+      <line x1="18" y1="18" x2="35" y2="35" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+      <circle cx="0" cy="0" r="15" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.3"/>
+    </g>
+    
+    <g transform="translate(1200, 500)">
+      <circle cx="0" cy="0" r="20" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.3"/>
+      <line x1="14" y1="14" x2="28" y2="28" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+      <circle cx="0" cy="0" r="12" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.2"/>
+    </g>
+    
+    <g transform="translate(500, 600)">
+      <circle cx="0" cy="0" r="30" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.3"/>
+      <line x1="21" y1="21" x2="42" y2="42" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+      <circle cx="0" cy="0" r="18" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.2"/>
+    </g>
+  </g>
+  
+  <!-- Lock Icons -->
+  <g opacity="0.1">
+    <g transform="translate(150, 500)">
+      <rect x="-8" y="5" width="16" height="20" rx="2" fill="#ffffff" opacity="0.3"/>
+      <path d="M-5,-5 Q-5,-12 0,-12 Q5,-12 5,-5" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.4"/>
+      <circle cx="0" cy="12" r="2" fill="#ffffff" opacity="0.5"/>
+    </g>
+    
+    <g transform="translate(1700, 400)">
+      <rect x="-6" y="3" width="12" height="15" rx="1.5" fill="#ffffff" opacity="0.25"/>
+      <path d="M-4,-3 Q-4,-8 0,-8 Q4,-8 4,-3" stroke="#ffffff" stroke-width="1.5" fill="none" opacity="0.3"/>
+      <circle cx="0" cy="9" r="1.5" fill="#ffffff" opacity="0.4"/>
+    </g>
+    
+    <g transform="translate(700, 150)">
+      <rect x="-10" y="6" width="20" height="24" rx="3" fill="#ffffff" opacity="0.2"/>
+      <path d="M-6,-6 Q-6,-14 0,-14 Q6,-14 6,-6" stroke="#ffffff" stroke-width="2.5" fill="none" opacity="0.3"/>
+      <circle cx="0" cy="15" r="2.5" fill="#ffffff" opacity="0.4"/>
+    </g>
+  </g>
+  
+  <!-- QR Code Patterns -->
+  <g opacity="0.08">
+    <g transform="translate(1000, 150)">
+      <!-- QR Corner markers -->
+      <rect x="-15" y="-15" width="8" height="8" fill="#ffffff"/>
+      <rect x="7" y="-15" width="8" height="8" fill="#ffffff"/>
+      <rect x="-15" y="7" width="8" height="8" fill="#ffffff"/>
+      <!-- QR data dots -->
+      <rect x="-10" y="-10" width="2" height="2" fill="#ffffff"/>
+      <rect x="-6" y="-10" width="2" height="2" fill="#ffffff"/>
+      <rect x="-2" y="-10" width="2" height="2" fill="#ffffff"/>
+      <rect x="2" y="-10" width="2" height="2" fill="#ffffff"/>
+      <rect x="-10" y="-6" width="2" height="2" fill="#ffffff"/>
+      <rect x="-2" y="-6" width="2" height="2" fill="#ffffff"/>
+      <rect x="6" y="-6" width="2" height="2" fill="#ffffff"/>
+      <rect x="10" y="-6" width="2" height="2" fill="#ffffff"/>
+    </g>
+    
+    <g transform="translate(400, 400)">
+      <rect x="-12" y="-12" width="6" height="6" fill="#ffffff"/>
+      <rect x="6" y="-12" width="6" height="6" fill="#ffffff"/>
+      <rect x="-12" y="6" width="6" height="6" fill="#ffffff"/>
+      <rect x="-8" y="-8" width="1.5" height="1.5" fill="#ffffff"/>
+      <rect x="-4" y="-8" width="1.5" height="1.5" fill="#ffffff"/>
+      <rect x="0" y="-8" width="1.5" height="1.5" fill="#ffffff"/>
+      <rect x="-8" y="-4" width="1.5" height="1.5" fill="#ffffff"/>
+      <rect x="0" y="-4" width="1.5" height="1.5" fill="#ffffff"/>
+    </g>
+  </g>
+  
+  <!-- Verification Checkmarks -->
+  <g opacity="0.1">
+    <g transform="translate(1400, 600)">
+      <circle cx="0" cy="0" r="30" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.3"/>
+      <path d="M-10,0 L-3,7 L12,-8" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.4"/>
+    </g>
+    
+    <g transform="translate(600, 800)">
+      <circle cx="0" cy="0" r="25" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.25"/>
+      <path d="M-8,0 L-2,6 L10,-7" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.3"/>
+    </g>
+    
+    <g transform="translate(1100, 350)">
+      <circle cx="0" cy="0" r="20" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.2"/>
+      <path d="M-6,0 L-1,5 L8,-6" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.3"/>
+    </g>
+  </g>
+  
+  <!-- Digital Fingerprint Pattern -->
+  <g opacity="0.06">
+    <g transform="translate(960, 540)">
+      <ellipse cx="0" cy="0" rx="80" ry="100" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
+      <ellipse cx="0" cy="0" rx="60" ry="80" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.25"/>
+      <ellipse cx="0" cy="0" rx="40" ry="60" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.2"/>
+      <ellipse cx="0" cy="0" rx="20" ry="40" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.15"/>
+      <path d="M-30,-40 Q-20,-30 -30,-20 Q-40,-10 -30,0 Q-20,10 -30,20" stroke="#ffffff" stroke-width="1" fill="none" opacity="0.2"/>
+      <path d="M30,-40 Q20,-30 30,-20 Q40,-10 30,0 Q20,10 30,20" stroke="#ffffff" stroke-width="1" fill="none" opacity="0.2"/>
+    </g>
+  </g>
+  
+  <!-- Scanning Lines -->
+  <g opacity="0.04">
+    <rect x="0" y="200" width="1920" height="2" fill="#ffffff"/>
+    <rect x="0" y="400" width="1920" height="2" fill="#ffffff"/>
+    <rect x="0" y="600" width="1920" height="2" fill="#ffffff"/>
+    <rect x="0" y="800" width="1920" height="2" fill="#ffffff"/>
+  </g>
+  
+  <!-- Subtle Light Rays -->
+  <g opacity="0.03">
+    <path d="M960 0 L980 1080 L940 1080 Z" fill="#ffffff"/>
+    <path d="M480 0 L500 1080 L460 1080 Z" fill="#ffffff"/>
+    <path d="M1440 0 L1460 1080 L1420 1080 Z" fill="#ffffff"/>
+  </g>
+</svg>

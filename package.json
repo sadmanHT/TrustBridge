@@ -1,0 +1,32 @@
+{
+  "name": "trustbridge-monorepo",
+  "version": "1.0.0",
+  "description": "TrustBridge - Blockchain Document Verification Monorepo",
+  "private": true,
+  "workspaces": [
+    "contracts",
+    "apps/web"
+  ],
+  "scripts": {
+    "contracts:compile": "cd contracts && npm run compile",
+    "contracts:test": "cd contracts && npm run test",
+    "contracts:deploy:sepolia": "cd contracts && npm run deploy:sepolia",
+    "web:dev": "cd apps/web && npm run dev",
+    "vercel-build": "npm run --workspace apps/web build",
+    "install:all": "npm install && npm run install:contracts && npm run install:web",
+    "install:contracts": "cd contracts && npm install",
+    "install:web": "cd apps/web && npm install"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-alert-dialog": "^1.1.15",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "class-variance-authority": "^0.7.1"
+  }
+}
