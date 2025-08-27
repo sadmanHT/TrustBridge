@@ -86,7 +86,7 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
 
       // Create blob and download
       // pdfBytes: Uint8Array
-      const arrayBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength);
+      const arrayBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
       const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       
       // Ensure we only call browser APIs on the client
