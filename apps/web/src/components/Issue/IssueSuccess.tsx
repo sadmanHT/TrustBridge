@@ -73,7 +73,7 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
       const pdfBytes = await generateDiplomaPDF(diplomaData);
 
       // Create blob and download
-      const blob = new Blob([pdfBytes.buffer], { type: 'application/pdf' });
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
       // Create download link
