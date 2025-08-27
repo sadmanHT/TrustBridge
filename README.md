@@ -271,6 +271,139 @@ git push origin main
    - Test in preview deployments
    - Monitor for security vulnerabilities
 
+## Netlify Deployment (Alternative)
+
+### Prerequisites
+
+1. **Netlify Account**: Sign up at [netlify.com](https://netlify.com)
+2. **GitHub Repository**: Your code should be in a GitHub repository (already completed above)
+3. **Environment Variables**: Have your environment variables ready
+
+### Netlify Configuration
+
+The repository includes a <mcfile name="netlify.toml" path="D:\Blockchain\netlify.toml"></mcfile> configuration file with optimized settings:
+
+```toml
+[build]
+  base = "apps/web"
+  command = "npm run build"
+  publish = "apps/web/.next"
+
+[build.environment]
+  NODE_VERSION = "18"
+```
+
+### Deployment Steps
+
+#### 1. Import Project to Netlify
+
+1. **Connect Repository**:
+   - Go to [Netlify Dashboard](https://app.netlify.com)
+   - Click "New site from Git"
+   - Choose "GitHub" and authorize Netlify
+   - Select your `trustbridge` repository
+
+2. **Configure Build Settings**:
+   - **Base directory**: `apps/web`
+   - **Build command**: `npm run build`
+   - **Publish directory**: `apps/web/.next`
+   - **Node version**: 18 (automatically set by netlify.toml)
+
+#### 2. Environment Variables
+
+Go to **Site Settings → Environment Variables** and add:
+
+```env
+NEXT_PUBLIC_CONTRACT_ADDRESS=your_contract_address
+NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_key
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_id
+PINATA_JWT=your_pinata_jwt
+PINATA_GATEWAY_URL=your_pinata_gateway
+```
+
+#### 3. Deploy
+
+1. Click "Deploy site"
+2. Netlify will automatically build and deploy your application
+3. Your app will be available at the provided `.netlify.app` URL
+
+### Netlify vs Vercel Comparison
+
+| Feature | Netlify | Vercel |
+|---------|---------|--------|
+| **Ease of Setup** | Simple Git integration | Simple Git integration |
+| **Build Performance** | Good | Excellent |
+| **Edge Functions** | Available | Available |
+| **Custom Domains** | Free SSL included | Free SSL included |
+| **Analytics** | Basic (paid for advanced) | Built-in Web Vitals |
+| **Pricing** | Generous free tier | Generous free tier |
+| **Best For** | Static sites, JAMstack | Next.js applications |
+
+### Netlify Redeployment
+
+#### Automatic Redeployment
+```bash
+# Any push to main branch triggers automatic deployment
+git add .
+git commit -m "Your changes"
+git push origin main
+```
+
+#### Manual Redeployment
+1. Go to Netlify site dashboard
+2. Click "Deploys" tab
+3. Click "Trigger deploy" → "Deploy site"
+
+### Netlify-Specific Features
+
+#### 1. Branch Previews
+- Automatic deploy previews for pull requests
+- Each branch gets its own preview URL
+- Perfect for testing before merging
+
+#### 2. Form Handling
+- Built-in form processing (if needed for contact forms)
+- Spam protection included
+- No backend required
+
+#### 3. Split Testing
+- A/B testing capabilities
+- Traffic splitting between deployments
+- Analytics for conversion tracking
+
+### Troubleshooting Netlify
+
+#### Build Failures
+- Check build logs in Netlify dashboard
+- Verify Node.js version compatibility
+- Ensure all dependencies are listed in package.json
+- Check environment variables are set
+
+#### Runtime Issues
+- Verify all `NEXT_PUBLIC_*` variables are set
+- Check browser console for client-side errors
+- Review Netlify function logs if using serverless functions
+
+### Custom Domain on Netlify
+
+1. **Add Domain**:
+   - Go to Site Settings → Domain management
+   - Click "Add custom domain"
+   - Enter your domain name
+
+2. **Configure DNS**:
+   - Point your domain's DNS to Netlify
+   - Use Netlify's nameservers or CNAME records
+   - SSL certificate is automatically provisioned
+
+### Security Headers
+
+The `netlify.toml` includes security headers:
+- X-Frame-Options: Prevents clickjacking
+- X-XSS-Protection: XSS attack protection
+- Content-Security-Policy: Controls resource loading
+- X-Content-Type-Options: MIME type sniffing protection
+
 ## End-to-End Demo Flow
 
 ### For Issuers (Educational Institutions)
