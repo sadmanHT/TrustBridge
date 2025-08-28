@@ -10,6 +10,12 @@ A decentralized credential verification system built on Ethereum that allows ins
 - 🌐 **IPFS Integration**: Optional decentralized file storage
 - 🔒 **Privacy-First**: Only document hashes stored on-chain, no PII
 - ⚡ **Client-Side Processing**: Files processed locally in browser
+- 👤 **User Authentication**: Secure login system with NextAuth.js
+- 💼 **Personal Dashboard**: Track your credential activities and linked wallets
+- 🔗 **Wallet Linking**: Connect multiple Ethereum wallets to your account
+- 👑 **Admin Panel**: Administrative dashboard for system management
+- 📊 **Activity Tracking**: Comprehensive logging of all credential operations
+- 🛡️ **Rate Limiting**: API protection with configurable rate limits
 
 ## Prerequisites
 
@@ -17,6 +23,7 @@ A decentralized credential verification system built on Ethereum that allows ins
 - Ethereum wallet with Sepolia testnet ETH
 - Alchemy API key for blockchain connectivity
 - Web3.Storage token for IPFS uploads (optional)
+- Database (SQLite for development, PostgreSQL for production)
 
 ## Setup Instructions
 
@@ -29,9 +36,21 @@ cp .env.example .env
 
 Fill in the following variables in `.env`:
 
+**Database Configuration:**
+- `DATABASE_URL`: Database connection string (e.g., `file:./dev.db` for SQLite)
+
+**Authentication:**
+- `NEXTAUTH_SECRET`: Random secret key for NextAuth.js session encryption
+- `NEXTAUTH_URL`: Your application URL (e.g., `http://localhost:3000`)
+
+**Blockchain Configuration:**
 - `ALCHEMY_API_KEY`: Get from [Alchemy Dashboard](https://dashboard.alchemy.com/)
 - `WALLET_PRIVATE_KEY`: Your wallet's private key (without 0x prefix)
 - `WEB3_STORAGE_TOKEN`: Get from [Web3.Storage](https://web3.storage/) (optional for IPFS)
+
+**Rate Limiting (Optional):**
+- `UPSTASH_REDIS_REST_URL`: Redis URL for rate limiting
+- `UPSTASH_REDIS_REST_TOKEN`: Redis token for rate limiting
 
 ### 2. Install Dependencies
 
@@ -40,7 +59,20 @@ Fill in the following variables in `.env`:
 yarn
 ```
 
-### 3. Smart Contract Setup
+### 3. Database Setup
+
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Create and migrate database
+npx prisma db push
+
+# (Optional) Seed database with sample data
+npx prisma db seed
+```
+
+### 4. Smart Contract Setup
 
 ```bash
 # Compile contracts
@@ -57,7 +89,7 @@ The deployment will:
 - Print the deployed contract address
 - Automatically create `/apps/web/src/contractConfig.json` with the contract details
 
-### 4. Start the Web Application
+### 5. Start the Web Application
 
 ```bash
 # Start Next.js development server
@@ -74,13 +106,47 @@ You'll need Sepolia testnet ETH to deploy contracts and issue credentials:
 2. **Chainlink Faucet**: [https://faucets.chain.link/sepolia](https://faucets.chain.link/sepolia)
 3. **QuickNode Faucet**: [https://faucet.quicknode.com/ethereum/sepolia](https://faucet.quicknode.com/ethereum/sepolia)
 
-## GitHub Setup and Deployment
+## 🚀 Quick Deployment (1-Click)
+
+### Deploy to Vercel (Recommended)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Ftrustbridge&project-name=trustbridge&repository-name=trustbridge&root-directory=apps%2Fweb&env=NEXTAUTH_SECRET,DATABASE_URL,NEXT_PUBLIC_RPC_URL,PINATA_JWT&envDescription=Required%20environment%20variables%20for%20TrustBridge&envLink=https%3A%2F%2Fgithub.com%2Fyourusername%2Ftrustbridge%23environment-configuration)
+
+**Steps:**
+1. Click the "Deploy with Vercel" button above
+2. Connect your GitHub account and fork the repository
+3. Configure the required environment variables:
+   - `NEXTAUTH_SECRET`: Generate with `openssl rand -base64 32`
+   - `DATABASE_URL`: Your database connection string
+   - `NEXT_PUBLIC_RPC_URL`: Your Alchemy or Infura RPC URL
+   - `PINATA_JWT`: Your Pinata JWT token (optional)
+4. Click "Deploy" and wait for the build to complete
+5. Your TrustBridge app will be live at the provided URL!
+
+### Deploy to Netlify
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/yourusername/trustbridge&base=apps/web)
+
+**Steps:**
+1. Click the "Deploy to Netlify" button above
+2. Connect your GitHub account and authorize Netlify
+3. Configure the required environment variables in Netlify dashboard:
+   - `NEXTAUTH_SECRET`: Generate with `openssl rand -base64 32`
+   - `DATABASE_URL`: Your database connection string
+   - `NEXT_PUBLIC_RPC_URL`: Your Alchemy or Infura RPC URL
+   - `PINATA_JWT`: Your Pinata JWT token (optional)
+4. Click "Deploy site" and wait for the build to complete
+5. Your TrustBridge app will be live at the provided `.netlify.app` URL!
+
+---
+
+## 🛠️ Manual Setup and Deployment
 
 ### Prerequisites
 
 1. **Git Installation**: Download and install Git from [git-scm.com](https://git-scm.com/)
 2. **GitHub Account**: Sign up at [github.com](https://github.com)
-3. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
+3. **Vercel Account**: Sign up at [vercel.com](https://vercel.com) OR **Netlify Account**: Sign up at [netlify.com](https://netlify.com)
 4. **Environment Variables**: Have your environment variables ready
 
 ### Initial Setup
@@ -366,6 +432,102 @@ git push origin main
 - Spam protection included
 - No backend required
 
+---
+
+## 🔧 Production Deployment Checklist
+
+### Before Going Live
+
+- [ ] **Environment Variables**: All required environment variables are set
+- [ ] **Database**: Production database is configured and accessible
+- [ ] **Smart Contracts**: Contracts are deployed to mainnet (not testnet)
+- [ ] **API Keys**: All API keys are valid and have appropriate rate limits
+- [ ] **Domain**: Custom domain is configured (optional)
+- [ ] **SSL**: HTTPS is enabled (automatic on Vercel/Netlify)
+- [ ] **Error Monitoring**: Set up error tracking (Sentry, LogRocket, etc.)
+- [ ] **Analytics**: Configure analytics if needed
+- [ ] **Backup**: Database backup strategy is in place
+
+### Environment Variables for Production
+
+```env
+# Authentication (Required)
+NEXTAUTH_SECRET=your-super-secret-key-here
+NEXTAUTH_URL=https://your-domain.com
+
+# Database (Required)
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# Blockchain (Required)
+NEXT_PUBLIC_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY
+NEXT_PUBLIC_CONTRACT_ADDRESS=0x1234567890123456789012345678901234567890
+
+# File Storage (Optional)
+PINATA_JWT=your-pinata-jwt-token
+NEXT_PUBLIC_PINATA_GATEWAY_URL=https://gateway.pinata.cloud
+
+# Rate Limiting (Optional)
+UPSTASH_REDIS_REST_URL=https://your-redis-url
+UPSTASH_REDIS_REST_TOKEN=your-redis-token
+
+# Build Configuration
+SKIP_ENV_VALIDATION=true
+NODE_ENV=production
+```
+
+### Post-Deployment Verification
+
+After deployment, verify these core functionalities:
+
+1. **🔐 Authentication Flow**
+   - [ ] User registration works
+   - [ ] User login works
+   - [ ] Session persistence works
+   - [ ] Logout works properly
+
+2. **📊 Dashboard Access**
+   - [ ] User dashboard loads
+   - [ ] Wallet connection works
+   - [ ] Activity history displays
+   - [ ] Profile management works
+
+3. **📄 Credential Operations**
+   - [ ] Issue credential (admin)
+   - [ ] Upload and verify credential
+   - [ ] QR code generation works
+   - [ ] Hash verification works
+
+4. **✅ Verification Flow**
+   - [ ] File upload verification
+   - [ ] Hash input verification
+   - [ ] QR code scanning works
+   - [ ] Verification results display correctly
+
+5. **🔗 Blockchain Integration**
+   - [ ] Wallet connection works
+   - [ ] Contract interactions work
+   - [ ] Transaction signing works
+   - [ ] Network switching works (if applicable)
+
+### Performance Optimization
+
+- **Image Optimization**: Next.js automatically optimizes images
+- **Code Splitting**: Automatic with Next.js App Router
+- **Caching**: Configure appropriate cache headers
+- **CDN**: Vercel/Netlify provide global CDN automatically
+- **Database**: Use connection pooling for production databases
+- **Monitoring**: Set up performance monitoring (Vercel Analytics, etc.)
+
+### Security Considerations
+
+- **Environment Variables**: Never commit secrets to version control
+- **API Rate Limiting**: Implement rate limiting for public APIs
+- **Input Validation**: All user inputs are validated
+- **CORS**: Configure appropriate CORS policies
+- **CSP**: Consider implementing Content Security Policy
+- **Database**: Use read-only database users where possible
+- **Logging**: Log security events but not sensitive data
+
 #### 3. Split Testing
 - A/B testing capabilities
 - Traffic splitting between deployments
@@ -403,6 +565,82 @@ The `netlify.toml` includes security headers:
 - X-XSS-Protection: XSS attack protection
 - Content-Security-Policy: Controls resource loading
 - X-Content-Type-Options: MIME type sniffing protection
+
+## Usage
+
+### Authentication System
+
+The application now includes a comprehensive authentication system:
+
+1. **Sign Up/Login**: Create an account or sign in at `/auth/signin`
+2. **Link Wallets**: Connect multiple Ethereum wallets to your account
+3. **Personal Dashboard**: View your activity history and linked wallets
+4. **Admin Access**: Administrators can access system-wide statistics and user management
+
+### Creating Users
+
+**Option 1: Database Seeding**
+```bash
+npx prisma db seed
+```
+This creates sample users including an admin user.
+
+**Option 2: Manual Registration**
+1. Navigate to `/auth/signin`
+2. Click "Create Account" or sign up
+3. Complete the registration process
+
+**Option 3: Direct Database Insert**
+```bash
+npx prisma studio
+# Use Prisma Studio to manually create users
+```
+
+### Wallet Linking Process
+
+1. **Login** to your account
+2. **Navigate to Dashboard** (`/dashboard`)
+3. **Click "Link New Wallet"**
+4. **Connect your wallet** using WalletConnect or MetaMask
+5. **Sign the verification message** to prove wallet ownership
+6. **Wallet is now linked** and appears in your dashboard
+
+### Dashboard Features
+
+**Personal Dashboard** (`/dashboard`):
+- View all your credential activities
+- Manage linked wallets
+- Track issuance and verification history
+- Quick access to issue new credentials
+
+**Admin Dashboard** (`/admin`):
+- System-wide statistics
+- User management
+- Activity monitoring
+- Platform analytics
+
+### For Issuers
+
+1. **Login** to your account (required)
+2. **Connect your wallet** using the "Connect Wallet" button
+3. **Upload a document** you want to issue as a credential
+4. **Review the document hash** and metadata
+5. **Submit to blockchain** - this will create an immutable record
+6. **Activity is logged** to your dashboard automatically
+7. **Share the QR code** or document hash with the credential holder
+
+### For Verifiers
+
+1. **Choose verification method**:
+   - Upload the original document
+   - Enter the document hash directly
+   - Scan a QR code
+2. **View verification results** showing:
+   - Document authenticity status
+   - Issuer information
+   - Timestamp of issuance
+   - IPFS link (if available)
+3. **No login required** for verification (public access)
 
 ## End-to-End Demo Flow
 

@@ -1,16 +1,14 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { CheckCircle, Copy, ExternalLink, Download, Share2 } from 'lucide-react';
+import { CheckCircle, ExternalLink, Download, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { QRCodeCard } from '@/components/ui/QR';
 import { CopyField } from '@/components/ui/Copy';
-import { CopyButton } from '@/components/ui/copy-button';
 import { useToast } from '@/hooks/use-toast';
 import { generateDiplomaPDF } from '@/lib/diploma';
-import { formatTxHash } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 interface IssueSuccessProps {

@@ -4,34 +4,31 @@ import React, { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { Shield, Upload, Search } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { ConnectButton } from '@/components/Wallet/ConnectButton';
 import { NetworkBadge } from '@/components/Status/NetworkBadge';
 import { ContractCard } from '@/components/Status/ContractCard';
 import { IssuerCard } from '@/components/Status/IssuerCard';
 import { IssueCard } from '@/components/Issue/IssueCard';
 import { VerifyCard } from '@/components/Verify/VerifyCard';
-import { Container, Grid, Stack, Section, Flex, Spacer, Divider } from '@/components/ui/Layout';
-import { SkeletonCard } from '@/components/ui/Skeleton';
+import { Container, Grid, Section, Spacer, Divider } from '@/components/ui/Layout';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Hero from '@/components/sections/Hero';
 import { motion } from 'framer-motion';
 
 export default function HomePage() {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('issue');
 
-  const handleIssueComplete = (result: any) => {
+  const handleIssueComplete = (hash: string, txHash: string) => {
     toast({
       title: "Credential Issued Successfully",
-      description: `Document hash: ${result.hash.slice(0, 10)}...`,
+      description: `Document hash: ${hash.slice(0, 10)}... | Tx: ${txHash.slice(0, 10)}...`,
     });
   };
 
-  const handleVerificationComplete = (result: any) => {
+  const handleVerificationComplete = (result: { valid: boolean }) => {
     toast({
       title: result.valid ? "Valid Credential" : "Invalid Credential",
       description: result.valid 

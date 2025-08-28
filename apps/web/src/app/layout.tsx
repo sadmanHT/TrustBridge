@@ -2,10 +2,24 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import { Providers } from '../components/providers';
 import { Toaster } from '../components/ui/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
 import NavBar from '../components/layout/NavBar';
 import StatusStrip from '../components/Status/StatusStrip';
 import Footer from '../components/layout/Footer';
+import ErrorBoundary from '../components/system/ErrorBoundary';
 import type { Metadata } from 'next';
+import { checkEnvironment } from '../lib/env';
+
+// Dev-only environment validation check
+if (process.env.NODE_ENV === 'development') {
+  const envCheck = checkEnvironment();
+  if (!envCheck.isValid) {
+    console.error('❌ Environment validation failed:', envCheck.errors);
+  }
+  if (envCheck.warnings.length > 0) {
+    console.warn('⚠️ Environment warnings:', envCheck.warnings);
+  }
+}
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -95,13 +109,16 @@ export default function RootLayout({
             
             {/* Main Content */}
             <main className="flex-1">
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
             </main>
             
             {/* Footer */}
             <Footer />
           </div>
           <Toaster />
+          <SonnerToaster />
         </Providers>
       </body>
     </html>

@@ -4,7 +4,9 @@ import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
+import { AuthProvider } from './providers/AuthProvider';
 import { config } from '../lib/wagmi';
+import { initializeWalletListeners } from '../lib/walletListeners';
 import { useState, useEffect } from 'react';
 import '@rainbow-me/rainbowkit/styles.css';
 
@@ -53,6 +55,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         return originalError.apply(this, args);
       };
       
+      // Initialize wallet listeners
+      initializeWalletListeners();
+      
       // Cleanup function to restore original console methods
       return () => {
         console.warn = originalWarn;
@@ -62,20 +67,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      forcedTheme="dark"
-      enableSystem={false}
-      disableTransitionOnChange
-    >
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config}>
-          <RainbowKitProvider>
-            {children}
-          </RainbowKitProvider>
-        </WagmiProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        forcedTheme="dark"
+        enableSystem={false}
+        disableTransitionOnChange
+      >
+        <QueryClientProvider client={queryClient}>
+          <WagmiProvider config={config}>
+            <RainbowKitProvider>
+              {children}
+            </RainbowKitProvider>
+          </WagmiProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, subDays, parseISO } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Calendar, TrendingUp, TrendingDown, CheckCircle, AlertCircle } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getEventAnalytics, getVerificationStats } from '@/lib/analytics';
 import type { EventAnalytics, VerificationStats } from '@/types/events';
@@ -101,7 +101,6 @@ export default function AnalyticsPage() {
 
   // Calculate date range based on time period
   const dateRange = useMemo(() => {
-    const now = new Date();
     switch (timePeriod) {
       case '7d':
         return { fromBlock: BigInt(0), days: 7 };

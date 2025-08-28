@@ -6,23 +6,22 @@ import {
   metaMaskWallet,
   injectedWallet,
 } from '@rainbow-me/rainbowkit/wallets';
+import { getEnvConfig } from './env';
 
-// Get Alchemy API key from environment
-const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-
-if (!alchemyApiKey) {
-  console.warn('NEXT_PUBLIC_ALCHEMY_API_KEY not found in environment variables');
-}
+// Load validated environment configuration
+const env = getEnvConfig();
 
 // WalletConnect warnings are now suppressed in the Providers component
 
 // Configure wagmi with RainbowKit (optimized wallet selection)
 export const config = getDefaultConfig({
-  appName: 'TrustBridge',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
+  appName: env.NEXT_PUBLIC_APP_NAME || 'TrustBridge',
+  projectId: env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
   chains: [sepolia],
   transports: {
-    [sepolia.id]: http(`https://eth-sepolia.g.alchemy.com/v2/${alchemyApiKey}`),
+    [sepolia.id]: typeof window !== 'undefined'
+      ? http('/api/rpc')
+      : http(`https://eth-sepolia.g.alchemy.com/v2/${env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
   },
   wallets: [
     {
@@ -42,7 +41,7 @@ export const config = getDefaultConfig({
 
 // Export contract configuration
 export const credentialRegistryConfig = {
-  address: contractConfig.address as `0x${string}`,
+  address: (env.NEXT_PUBLIC_CONTRACT_ADDRESS || contractConfig.address) as `0x${string}`,
   abi: contractConfig.abi,
 } as const;
 

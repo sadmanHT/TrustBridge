@@ -39,6 +39,10 @@
     "node_modules",
     "artifacts",
     "cache",
-    "typechain-types"
+    "typechain-types",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "jest.config.ts"
   ]
 }

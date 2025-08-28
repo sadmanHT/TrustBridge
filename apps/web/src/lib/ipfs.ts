@@ -22,8 +22,7 @@ export async function uploadToIPFS(file: File): Promise<string> {
     return data.cid;
   } catch (error) {
     console.error('IPFS upload failed:', error);
-    // Return a mock CID for demo purposes when upload fails
-    return `bafybeig${Math.random().toString(36).substring(2, 15)}fallback`;
+    throw error;
   }
 }
 

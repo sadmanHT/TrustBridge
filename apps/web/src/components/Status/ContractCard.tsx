@@ -4,7 +4,7 @@ import { useReadContract } from 'wagmi';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Copy, ExternalLink, FileText, CheckCircle } from 'lucide-react';
+import { ExternalLink, FileText, CheckCircle } from 'lucide-react';
 import { contractConfig } from '../../lib/contract';
 import { CopyButton } from '../ui/Copy';
 import { formatAddress } from '../../lib/format';
@@ -71,7 +71,11 @@ export function ContractCard({ className }: ContractCardProps) {
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0"
-                    onClick={() => window.open(getEtherscanUrl(contractAddress), '_blank')}
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.open(getEtherscanUrl(contractAddress), '_blank');
+                      }
+                    }}
                   >
                     <ExternalLink className="h-3 w-3" />
                   </Button>
@@ -100,7 +104,11 @@ export function ContractCard({ className }: ContractCardProps) {
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0"
-                      onClick={() => window.open(getEtherscanUrl(owner), '_blank')}
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          window.open(getEtherscanUrl(owner), '_blank');
+                        }
+                      }}
                     >
                       <ExternalLink className="h-3 w-3" />
                     </Button>
@@ -128,7 +136,11 @@ export function ContractCard({ className }: ContractCardProps) {
                 variant="outline"
                 size="sm"
                 className="w-full text-xs"
-                onClick={() => window.open(getEtherscanUrl(contractAddress), '_blank')}
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.open(getEtherscanUrl(contractAddress), '_blank');
+                  }
+                }}
               >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 View on Etherscan

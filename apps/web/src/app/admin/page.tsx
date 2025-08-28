@@ -1,385 +1,300 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Badge } from '../../components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
-import { useToast } from '../../hooks/use-toast';
-import contractConfig from '../../contractConfig.json';
-import { CheckCircle, XCircle, Shield, UserCheck, UserX, ExternalLink } from 'lucide-react';
-import { isAddress } from 'viem';
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { isAdmin } from '@/lib/auth'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Users, Activity, Wallet, TrendingUp, Shield, Clock } from 'lucide-react'
+import Link from 'next/link'
 
-interface ApprovedIssuer {
-  address: string;
-  name?: string;
-  approved: boolean;
-  addedAt: number;
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
+interface GlobalStats {
+  totalUsers: number
+  totalActivities: number
+  totalWallets: number
+  recentActivities: number
+}
+
+interface UserData {
+  id: string
+  email: string
+  name: string | null
+  role: string
+  createdAt: string
+  wallets: Array<{
+    id: string
+    address: string
+    label: string | null
+  }>
+  _count: {
+    activities: number
+  }
+}
+
+interface RecentActivity {
+  id: string
+  type: string
+  status: string
+  createdAt: string
+  user: {
+    email: string
+    name: string | null
+  }
+  wallet: string
+  docHash: string
 }
 
 export default function AdminPage() {
-  const { address, isConnected } = useAccount();
-  const { toast } = useToast();
-  const [issuerAddress, setIssuerAddress] = useState('');
-  const [approvedIssuers, setApprovedIssuers] = useState<ApprovedIssuer[]>([]);
-  const [isApproving, setIsApproving] = useState(false);
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [stats, setStats] = useState<GlobalStats | null>(null)
+  const [users, setUsers] = useState<UserData[]>([])
+  const [activities, setActivities] = useState<RecentActivity[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Read contract owner
-  const { data: contractOwner } = useReadContract({
-    address: contractConfig.address as `0x${string}`,
-    abi: contractConfig.abi,
-    functionName: 'owner',
-  });
-
-  // Write contract for approving issuers
-  const { writeContract, data: hash, error, isPending } = useWriteContract();
-
-  // Wait for transaction receipt
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash,
-  });
-
-  // Check if current user is the owner
-  const isOwner = isConnected && address && contractOwner && 
-    typeof contractOwner === 'string' && 
-    address.toLowerCase() === contractOwner.toLowerCase();
-
-  // Load approved issuers from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('approvedIssuers');
-    if (stored) {
-      try {
-        setApprovedIssuers(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse stored issuers:', e);
-      }
-    }
-  }, []);
+    if (status === 'loading') return
 
-  // Save approved issuers to localStorage
-  const saveApprovedIssuers = (issuers: ApprovedIssuer[]) => {
-    localStorage.setItem('approvedIssuers', JSON.stringify(issuers));
-    setApprovedIssuers(issuers);
-  };
-
-  // Handle transaction success
-  useEffect(() => {
-    if (isConfirmed && hash) {
-      toast({
-        title: "Transaction Confirmed",
-        description: `Issuer approval updated successfully!`,
-      });
-      setIssuerAddress('');
-      setIsApproving(false);
-    }
-  }, [isConfirmed, hash, toast]);
-
-  // Handle transaction error
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Transaction Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsApproving(false);
-    }
-  }, [error, toast]);
-
-  const handleApproveIssuer = async (approve: boolean) => {
-    if (!issuerAddress || !isAddress(issuerAddress)) {
-      toast({
-        title: "Invalid Address",
-        description: "Please enter a valid Ethereum address.",
-        variant: "destructive",
-      });
-      return;
+    if (!session || !isAdmin(session)) {
+      router.push('/dashboard')
+      return
     }
 
-    setIsApproving(true);
+    fetchAdminData()
+  }, [session, status, router])
 
+  const fetchAdminData = async () => {
     try {
-      writeContract({
-        address: contractConfig.address as `0x${string}`,
-        abi: contractConfig.abi,
-        functionName: 'approveIssuer',
-        args: [issuerAddress as `0x${string}`, approve],
-      });
+      const [statsRes, usersRes, activitiesRes] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/admin/users'),
+        fetch('/api/admin/activities')
+      ])
 
-      // Update local storage
-      const existingIndex = approvedIssuers.findIndex(issuer => 
-        issuer.address.toLowerCase() === issuerAddress.toLowerCase()
-      );
-
-      let updatedIssuers: ApprovedIssuer[];
-      if (existingIndex >= 0) {
-        updatedIssuers = [...approvedIssuers];
-        updatedIssuers[existingIndex] = {
-          ...updatedIssuers[existingIndex],
-          approved: approve,
-        };
-      } else {
-        updatedIssuers = [
-          ...approvedIssuers,
-          {
-            address: issuerAddress,
-            approved: approve,
-            addedAt: Date.now(),
-          }
-        ];
+      if (statsRes.ok) {
+        const statsData = await statsRes.json()
+        setStats(statsData)
       }
 
-      saveApprovedIssuers(updatedIssuers);
-    } catch (err) {
-      console.error('Failed to approve issuer:', err);
-      setIsApproving(false);
-    }
-  };
-
-  const addIssuerManually = () => {
-    if (!issuerAddress || !isAddress(issuerAddress)) {
-      toast({
-        title: "Invalid Address",
-        description: "Please enter a valid Ethereum address.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const existingIndex = approvedIssuers.findIndex(issuer => 
-      issuer.address.toLowerCase() === issuerAddress.toLowerCase()
-    );
-
-    if (existingIndex >= 0) {
-      toast({
-        title: "Address Already Added",
-        description: "This address is already in the list.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const updatedIssuers = [
-      ...approvedIssuers,
-      {
-        address: issuerAddress,
-        approved: false, // Default to false, will be checked on-chain
-        addedAt: Date.now(),
+      if (usersRes.ok) {
+        const usersData = await usersRes.json()
+        setUsers(usersData)
       }
-    ];
 
-    saveApprovedIssuers(updatedIssuers);
-    setIssuerAddress('');
-    toast({
-      title: "Address Added",
-      description: "Address added to monitoring list.",
-    });
-  };
-
-  const removeFromList = (addressToRemove: string) => {
-    const updatedIssuers = approvedIssuers.filter(issuer => 
-      issuer.address.toLowerCase() !== addressToRemove.toLowerCase()
-    );
-    saveApprovedIssuers(updatedIssuers);
-    toast({
-      title: "Address Removed",
-      description: "Address removed from monitoring list.",
-    });
-  };
-
-  if (!isConnected) {
-    return (
-      <div className="container mx-auto p-6">
-        <Card className="max-w-md mx-auto">
-          <CardHeader className="text-center">
-            <Shield className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-            <CardTitle>Admin Panel</CardTitle>
-            <CardDescription>
-              Connect your wallet to access admin functions
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <ConnectButton />
-          </CardContent>
-        </Card>
-      </div>
-    );
+      if (activitiesRes.ok) {
+        const activitiesData = await activitiesRes.json()
+        setActivities(activitiesData)
+      }
+    } catch (error) {
+      console.error('Error fetching admin data:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if (!isOwner) {
+  if (status === 'loading' || loading) {
     return (
-      <div className="container mx-auto p-6">
-        <Card className="max-w-md mx-auto">
-          <CardHeader className="text-center">
-            <XCircle className="h-12 w-12 mx-auto mb-4 text-red-600" />
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              Only the contract owner can access this page
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <div className="text-sm text-gray-600">
-              <p>Your address: {address}</p>
-              <p>Owner address: {contractOwner ? String(contractOwner) : 'Loading...'}</p>
-            </div>
-            <ConnectButton />
-          </CardContent>
-        </Card>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading admin dashboard...</p>
+          </div>
+        </div>
       </div>
-    );
+    )
+  }
+
+  if (!session || !isAdmin(session)) {
+    return null // Will redirect in useEffect
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Admin Panel</h1>
-          <p className="text-gray-600">Manage credential issuers</p>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Shield className="h-8 w-8 text-blue-600" />
+            Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            System overview and user management
+          </p>
         </div>
-        <ConnectButton />
+        <Link href="/dashboard">
+          <Button variant="outline">
+            Back to Dashboard
+          </Button>
+        </Link>
       </div>
 
-      {/* Approve/Unapprove Issuer Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserCheck className="h-5 w-5" />
-            Approve/Unapprove Issuer
-          </CardTitle>
-          <CardDescription>
-            Enter an Ethereum address to approve or unapprove as a credential issuer
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="issuer-address">Issuer Address</Label>
-            <Input
-              id="issuer-address"
-              placeholder="0x..."
-              value={issuerAddress}
-              onChange={(e) => setIssuerAddress(e.target.value)}
-              disabled={isPending || isConfirming || isApproving}
-            />
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              onClick={() => handleApproveIssuer(true)}
-              disabled={!issuerAddress || isPending || isConfirming || isApproving}
-              className="flex items-center gap-2"
-            >
-              <CheckCircle className="h-4 w-4" />
-              {isPending || isConfirming || isApproving ? 'Processing...' : 'Approve'}
-            </Button>
-            
-            <Button
-              variant="destructive"
-              onClick={() => handleApproveIssuer(false)}
-              disabled={!issuerAddress || isPending || isConfirming || isApproving}
-              className="flex items-center gap-2"
-            >
-              <UserX className="h-4 w-4" />
-              Unapprove
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={addIssuerManually}
-              disabled={!issuerAddress}
-              className="flex items-center gap-2"
-            >
-              Add to List
-            </Button>
-          </div>
+      {/* Global Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Registered users
+            </p>
+          </CardContent>
+        </Card>
 
-          {hash && (
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                Transaction submitted:{' '}
-                <a
-                  href={`https://etherscan.io/tx/${hash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono underline hover:no-underline"
-                >
-                  {hash.slice(0, 10)}...{hash.slice(-8)}
-                </a>
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalActivities || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Issue & verify actions
+            </p>
+          </CardContent>
+        </Card>
 
-      {/* Approved Issuers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Approved Issuers</CardTitle>
-          <CardDescription>
-            List of addresses being monitored. On-chain approval status is the source of truth.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {approvedIssuers.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <UserCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No issuers in the monitoring list</p>
-              <p className="text-sm">Add addresses above to start monitoring</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Added</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {approvedIssuers.map((issuer) => (
-                  <TableRow key={issuer.address}>
-                    <TableCell className="font-mono">
-                      <div className="flex items-center gap-2">
-                        {issuer.address.slice(0, 10)}...{issuer.address.slice(-8)}
-                        <a
-                          href={`https://etherscan.io/address/${issuer.address}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Linked Wallets</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalWallets || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Connected wallets
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.recentActivities || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Last 24 hours
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Activities */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Recent Activities
+            </CardTitle>
+            <CardDescription>
+              Latest actions from all users
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {activities.length > 0 ? (
+                activities.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant={activity.type === 'ISSUE' ? 'default' : 'secondary'}>
+                          {activity.type}
+                        </Badge>
+                        <Badge variant={activity.status === 'success' ? 'default' : 'destructive'}>
+                          {activity.status}
+                        </Badge>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={issuer.approved ? "default" : "secondary"}>
-                        {issuer.approved ? 'Approved' : 'Not Approved'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {new Date(issuer.addedAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeFromList(issuer.address)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Remove
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                      <p className="text-sm font-medium">
+                        {activity.user.name || activity.user.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.wallet.slice(0, 8)}...{activity.wallet.slice(-6)}
+                      </p>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(activity.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  No recent activities
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* User List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              User Management
+            </CardTitle>
+            <CardDescription>
+              All registered users and their wallets
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {users.length > 0 ? (
+                users.map((user) => (
+                  <div key={user.id} className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="font-medium">{user.name || 'No name'}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
+                          {user.role}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {user._count.activities} activities
+                        </span>
+                      </div>
+                    </div>
+                    {user.wallets.length > 0 ? (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Linked Wallets ({user.wallets.length}):
+                        </p>
+                        {user.wallets.map((wallet) => (
+                          <div key={wallet.id} className="text-xs bg-muted p-2 rounded">
+                            <span className="font-mono">
+                              {wallet.address.slice(0, 8)}...{wallet.address.slice(-6)}
+                            </span>
+                            {wallet.label && (
+                              <span className="ml-2 text-muted-foreground">({wallet.label})</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No wallets linked</p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  No users found
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
-  );
+  )
 }

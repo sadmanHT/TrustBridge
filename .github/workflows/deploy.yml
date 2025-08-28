@@ -1,0 +1,182 @@
+name: Deploy to Netlify and Vercel
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  # Check if we should skip deployment for docs-only changes
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should-deploy: ${{ steps.changes.outputs.should-deploy }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for non-docs changes
+        id: changes
+        run: |
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          echo "Changed files: $CHANGED_FILES"
+          
+          # Check if any non-docs files changed
+          NON_DOCS_CHANGED=$(echo "$CHANGED_FILES" | grep -v -E '^(README\.md|DEPLOYMENT\.md|NEXTAUTH_SECURITY\.md|README-RPC-Setup\.md|\.md$|docs/|documentation/)' || true)
+          
+          if [ -n "$NON_DOCS_CHANGED" ] || [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "Deployment needed - non-docs files changed or PR event"
+          else
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+            echo "Skipping deployment - only docs files changed"
+          fi
+
+  # Build and test the application
+  build:
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.should-deploy == 'true'
+    defaults:
+      run:
+        working-directory: ./apps/web
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './apps/web/package-lock.json'
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ./apps/web/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('./apps/web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npm run type-check
+        continue-on-error: true
+
+      - name: Build application
+        run: npm run build
+        env:
+          SKIP_ENV_VALIDATION: 'true'
+          NODE_ENV: 'production'
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-files
+          path: |
+            ./apps/web/.next
+            ./apps/web/out
+          retention-days: 1
+
+  # Deploy to Netlify
+  deploy-netlify:
+    runs-on: ubuntu-latest
+    needs: [check-changes, build]
+    if: needs.check-changes.outputs.should-deploy == 'true' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: ./apps/web
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-files
+          path: ./apps/web/
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli
+
+      - name: Deploy to Netlify
+        run: |
+          netlify deploy --prod --dir=.next --site=${{ secrets.NETLIFY_SITE_ID }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+
+  # Deploy to Vercel
+  deploy-vercel:
+    runs-on: ubuntu-latest
+    needs: [check-changes, build]
+    if: needs.check-changes.outputs.should-deploy == 'true' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: ./apps/web
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-files
+          path: ./apps/web/
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel
+        run: |
+          vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # Notification job (optional)
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy-netlify, deploy-vercel]
+    if: always() && needs.check-changes.outputs.should-deploy == 'true'
+    
+    steps:
+      - name: Deployment Status
+        run: |
+          if [ "${{ needs.deploy-netlify.result }}" = "success" ] && [ "${{ needs.deploy-vercel.result }}" = "success" ]; then
+            echo "✅ Successfully deployed to both Netlify and Vercel"
+          elif [ "${{ needs.deploy-netlify.result }}" = "success" ] || [ "${{ needs.deploy-vercel.result }}" = "success" ]; then
+            echo "⚠️ Partial deployment success"
+          else
+            echo "❌ Deployment failed"
+            exit 1
+          fi

@@ -55,7 +55,8 @@ export function QRCodeCard({
   const qrRef = useRef<HTMLDivElement>(null);
 
   const downloadQR = async () => {
-    if (!qrRef.current) return;
+    // Client-side check for SSR safety
+    if (typeof window === 'undefined' || !qrRef.current) return;
     
     setIsDownloading(true);
     try {
@@ -185,7 +186,7 @@ export function QRScanner({ onScan, onError, className }: QRScannerProps) {
           console.warn('QR scan error:', errorMessage);
         }
       );
-    } catch (err) {
+    } catch {
       const errorMsg = 'Failed to start QR scanner';
       setError(errorMsg);
       onError?.(errorMsg);

@@ -1,0 +1,139 @@
+# Netlify configuration for TrustBridge Next.js application
+# This file configures build settings and deployment options for Netlify
+
+[build]
+  # Build command to run
+  command = "npm run build"
+  
+  # Directory to publish (Next.js output directory)
+  publish = ".next"
+  
+  # Node.js version to use
+  environment = { NODE_VERSION = "18" }
+
+# Redirect all routes to Next.js for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security headers for enhanced security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Security headers
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    
+    # Content Security Policy (adjust as needed)
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https: wss:; frame-src 'none';"
+
+# Cache static assets
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache Next.js assets
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Environment variable handling
+# Netlify automatically exposes NEXT_PUBLIC_* variables to the client
+# Server-side variables (like NEXTAUTH_SECRET) remain secure
+
+# Build environment configuration
+[build.environment]
+  # Ensure npm uses the correct registry
+  NPM_CONFIG_REGISTRY = "https://registry.npmjs.org/"
+  
+  # Optimize build performance
+  NODE_OPTIONS = "--max-old-space-size=4096"
+  
+  # Enable Next.js telemetry (optional)
+  NEXT_TELEMETRY_DISABLED = "1"
+  
+  # Skip environment validation for build
+  SKIP_ENV_VALIDATION = "true"
+  
+  # Set production environment
+  NODE_ENV = "production"
+
+# Functions configuration (if using Netlify Functions)
+[functions]
+  # Directory for Netlify Functions (if needed)
+  directory = "netlify/functions"
+  
+  # Node.js runtime version
+  node_bundler = "esbuild"
+
+# Function timeout configuration
+[functions."*"]
+  max_duration = "30s"
+
+# Next.js API Routes as Functions
+[[functions]]
+  directory = "src/app/api"
+  included_files = ["src/**/*"]
+  node_bundler = "esbuild"
+
+# Development settings
+[dev]
+  # Local development command
+  command = "npm run dev"
+  
+  # Port for local development
+  port = 3000
+  
+  # Auto-open browser
+  autoLaunch = false
+
+# Branch-specific settings
+[context.production]
+  # Production-specific build command
+  command = "npm run build"
+  
+  # Production environment variables can be set in Netlify UI
+  # Site Settings → Environment Variables
+
+[context.deploy-preview]
+  # Preview deployment settings
+  command = "npm run build"
+  
+  # Preview deployments use the same build but different NEXTAUTH_URL
+
+[context.branch-deploy]
+  # Branch deployment settings
+  command = "npm run build"
+
+# Plugin configuration
+[[plugins]]
+  # Essential Next.js plugin for Netlify
+  package = "@netlify/plugin-nextjs"
+  
+  [plugins.inputs]
+    # Enable Next.js runtime features
+    distDir = ".next"
+
+# Form handling (if using Netlify Forms)
+# [build.processing]
+#   skip_processing = false
+# [build.processing.css]
+#   bundle = true
+#   minify = true
+# [build.processing.js]
+#   bundle = true
+#   minify = true
+
+# Edge functions (if needed)
+# [[edge_functions]]
+#   function = "auth-middleware"
+#   path = "/api/auth/*"
+
+# Analytics (if using Netlify Analytics)
+# [template.environment]
+#   NETLIFY_ANALYTICS_ID = "your-analytics-id"

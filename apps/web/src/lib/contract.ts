@@ -1,4 +1,5 @@
-import { Address } from 'viem';
+import { Address, TransactionReceipt, WalletClient, PublicClient } from 'viem';
+import { getPublicClient, getWalletClient } from './viem';
 
 // Contract ABI - generated from the TrustBridge contract
 export const contractABI = [
@@ -487,7 +488,6 @@ export function getContractAddress(): Address | null {
  * Get read-only client for contract interactions
  */
 export function getReadClient() {
-  const { getPublicClient } = require('./viem');
   return getPublicClient();
 }
 
@@ -495,7 +495,8 @@ export function getReadClient() {
  * Get write client for contract interactions
  */
 export function getWriteClient() {
-  const { getWalletClient } = require('./viem');
+  // This function is deprecated - use wagmi's useWalletClient hook instead
+  // for proper account connection and MetaMask integration
   return getWalletClient();
 }
 
@@ -532,37 +533,64 @@ export async function verifyCredential(documentHash: `0x${string}`): Promise<Ver
 }
 
 /**
- * Issue a new credential
+ * Issue a new credential with transaction receipt waiting
  */
 export async function issueCredential(
   documentHash: `0x${string}`,
   cid: string = '',
   account: Address
-): Promise<`0x${string}`> {
+): Promise<{ txHash: `0x${string}`; receipt: TransactionReceipt }> {
+  let writeClient: WalletClient | null = null;
+  let publicClient: PublicClient | null = null;
+  
   try {
-    const client = getWriteClient();
+    // Validate document hash format
+    if (!isValidDocumentHash(documentHash)) {
+      throw new Error('Invalid document hash format. Expected 0x followed by 64 hex characters.');
+    }
+    
+    writeClient = getWriteClient();
+    publicClient = getReadClient();
     const address = getContractAddress();
     
-    if (!client) {
+    if (!writeClient) {
       throw new Error('Wallet not connected');
+    }
+    
+    if (!publicClient) {
+      throw new Error('Public client not available');
     }
     
     if (!address) {
       throw new Error('Contract address not configured');
     }
 
-    const hash = await client.writeContract({
+    // Submit transaction using writeContract
+    const txHash = await writeClient.writeContract({
       address,
       abi: contractABI,
       functionName: 'issueCredential',
-      args: [documentHash, cid],
-      account
+      args: [documentHash, cid || ''],
+      account,
+      chain: null
     });
 
-    return hash;
+    // Wait for transaction receipt using public client with timeout and polling
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+      confirmations: 1,
+      pollingInterval: 2_000, // 2 seconds
+      timeout: 180_000 // 3 minutes
+    });
+
+    return { txHash, receipt };
   } catch (error) {
     console.error('Failed to issue credential:', error);
     throw error;
+  } finally {
+    // Cleanup if needed
+    writeClient = null;
+    publicClient = null;
   }
 }
 
@@ -572,31 +600,55 @@ export async function issueCredential(
 export async function revokeCredential(
   documentHash: `0x${string}`,
   account: Address
-): Promise<`0x${string}`> {
+): Promise<{ txHash: `0x${string}`; receipt: TransactionReceipt }> {
+  let writeClient: WalletClient | null = null;
+  let publicClient: PublicClient | null = null;
+  
   try {
-    const client = getWriteClient();
+    // Validate document hash format
+    if (!isValidDocumentHash(documentHash)) {
+      throw new Error('Invalid document hash format. Expected 0x followed by 64 hex characters.');
+    }
+    
+    writeClient = getWriteClient();
+    publicClient = getReadClient();
     const address = getContractAddress();
     
-    if (!client) {
+    if (!writeClient) {
       throw new Error('Wallet not connected');
+    }
+    
+    if (!publicClient) {
+      throw new Error('Public client not available');
     }
     
     if (!address) {
       throw new Error('Contract address not configured');
     }
 
-    const hash = await client.writeContract({
+    // Submit transaction using writeContract
+    const txHash = await writeClient.writeContract({
       address,
       abi: contractABI,
       functionName: 'revokeCredential',
       args: [documentHash],
-      account
+      account,
+      chain: null
     });
 
-    return hash;
+    // Wait for transaction receipt using public client
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash
+    });
+
+    return { txHash, receipt };
   } catch (error) {
     console.error('Failed to revoke credential:', error);
     throw error;
+  } finally {
+    // Cleanup if needed
+    writeClient = null;
+    publicClient = null;
   }
 }
 
@@ -690,27 +742,28 @@ export async function getContractInfo(): Promise<ContractInfo> {
 /**
  * Parse contract error messages
  */
-export function parseContractError(error: any): string {
-  if (error?.message) {
-    // Common error patterns
-    if (error.message.includes('User rejected')) {
-      return 'Transaction was rejected by user';
+export function parseContractError(error: unknown): string {
+  const errorObj = error as { message?: string };
+  if (errorObj?.message) {
+      // Common error patterns
+      if (errorObj.message.includes('User rejected')) {
+        return 'Transaction was rejected by user';
+      }
+      if (errorObj.message.includes('insufficient funds')) {
+        return 'Insufficient funds for transaction';
+      }
+      if (errorObj.message.includes('execution reverted')) {
+        return 'Transaction failed: Contract execution reverted';
+      }
+      if (errorObj.message.includes('nonce too low')) {
+        return 'Transaction failed: Nonce too low';
+      }
+      if (errorObj.message.includes('gas')) {
+        return 'Transaction failed: Gas estimation error';
+      }
+      
+      return errorObj.message;
     }
-    if (error.message.includes('insufficient funds')) {
-      return 'Insufficient funds for transaction';
-    }
-    if (error.message.includes('execution reverted')) {
-      return 'Transaction failed: Contract execution reverted';
-    }
-    if (error.message.includes('nonce too low')) {
-      return 'Transaction failed: Nonce too low';
-    }
-    if (error.message.includes('gas')) {
-      return 'Transaction failed: Gas estimation error';
-    }
-    
-    return error.message;
-  }
   
   return 'Unknown contract error';
 }

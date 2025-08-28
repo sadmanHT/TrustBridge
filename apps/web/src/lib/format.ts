@@ -194,12 +194,12 @@ export function isValidDocumentHash(hash: string): boolean {
  * @param error - Error object or string
  * @returns User-friendly error message
  */
-export function formatError(error: any): string {
+export function formatError(error: unknown): string {
   if (typeof error === 'string') {
     return error;
   }
   
-  if (error?.message) {
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     // Handle common Web3 errors
     if (error.message.includes('User rejected')) {
       return 'Transaction was rejected by user';

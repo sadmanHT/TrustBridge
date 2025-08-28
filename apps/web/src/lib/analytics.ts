@@ -1,9 +1,8 @@
-import { format, startOfDay, subDays, parseISO } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import type { Address, Hash } from 'viem';
 import {
   getIssuedEvents,
   getRevokedEvents,
-  getAllEvents,
 } from './indexer';
 import type {
   EventAnalytics,
@@ -19,10 +18,10 @@ import type {
 // LocalStorage keys
 const VERIFICATION_SUCCESS_KEY = 'tb_verifications_success';
 const VERIFICATION_HISTORY_KEY = 'tb_verification_history';
-const SESSION_VERIFICATION_KEY = 'tb_session_verifications';
+
 
 // Session storage for deduplication
-let sessionVerifications: Set<Hash> = new Set();
+const sessionVerifications: Set<Hash> = new Set();
 
 /**
  * Get analytics data from blockchain events
@@ -278,9 +277,9 @@ export function clearVerificationData(): void {
 /**
  * Get analytics for a specific time period
  */
-export async function getAnalyticsForPeriod(days: number): Promise<EventAnalytics> {
+export async function getAnalyticsForPeriod(): Promise<EventAnalytics> {
   const fromBlock = BigInt(0);
-  const toBlock: 'latest' = 'latest'; // Explicitly type as 'latest'
+  const toBlock = 'latest' as const;
   
   return getEventAnalytics({ fromBlock, toBlock });
 }

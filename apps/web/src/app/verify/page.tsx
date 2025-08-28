@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useReadContract } from 'wagmi';
 import { Upload, Hash, CheckCircle, XCircle, AlertTriangle, Copy, ExternalLink, Camera, X } from 'lucide-react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
-import { QRCodeSVG } from 'qrcode.react';
+// Html5QrcodeScanner will be dynamically imported to avoid SSR issues
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,10 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '../../hooks/use-toast';
 import contractConfig from '@/contractConfig.json';
 import { sha256 } from '@/lib/sha256';
-import { getIPFSGatewayUrl, isValidCID } from '../../lib/ipfs';
+import { getIPFSGatewayUrl } from '../../lib/ipfs';
+import { useWalletCheck } from '@/hooks/use-auth-guard';
+import { WalletPrompt } from '@/components/ui/WalletPrompt';
+import Link from 'next/link';
 
 // Known issuer addresses mapping
 const KNOWN_ISSUERS: Record<string, string> = {
@@ -33,6 +36,7 @@ interface VerificationResult {
 function VerifyPageContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { hasWallet, isLoading: isWalletLoading } = useWalletCheck();
   
   // State management
   const [inputMethod, setInputMethod] = useState<'file' | 'hash' | 'qr'>('file');
@@ -43,7 +47,7 @@ function VerifyPageContent() {
   const [verificationHash, setVerificationHash] = useState('');
   
   // QR Scanner refs
-  const qrScannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const qrScannerRef = useRef<{ clear: () => void; render: (successCallback: (decodedText: string) => void, errorCallback?: (error: string) => void) => void } | null>(null);
   const qrReaderRef = useRef<HTMLDivElement>(null);
 
   // Load hash from URL params on mount
@@ -136,60 +140,75 @@ function VerifyPageContent() {
   };
 
   // QR Scanner functions
-  const startQRScanner = () => {
+  const startQRScanner = async () => {
+    if (typeof window === 'undefined') return;
+    
     setShowQRScanner(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       if (qrReaderRef.current) {
-        qrScannerRef.current = new Html5QrcodeScanner(
-          "qr-reader",
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          false
-        );
+        try {
+          // Dynamic import to avoid SSR issues
+          const { Html5QrcodeScanner } = await import('html5-qrcode');
+          
+          qrScannerRef.current = new Html5QrcodeScanner(
+            "qr-reader",
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            false
+          );
         
-        qrScannerRef.current.render(
-          (decodedText) => {
-            // Try to extract hash from QR code
-            let extractedHash = '';
-            
-            try {
-              // Check if it's a URL with hash parameter
-              const url = new URL(decodedText);
-              extractedHash = url.searchParams.get('hash') || '';
-            } catch {
-              // Check if it's JSON with hash property
+          qrScannerRef.current.render(
+            (decodedText: string) => {
+              // Try to extract hash from QR code
+              let extractedHash = '';
+              
               try {
-                const qrData = JSON.parse(decodedText);
-                extractedHash = qrData.hash || '';
+                // Check if it's a URL with hash parameter
+                const url = new URL(decodedText);
+                extractedHash = url.searchParams.get('hash') || '';
               } catch {
-                // Treat as direct hash if it looks like one
-                if (decodedText.startsWith('0x') && decodedText.length === 66) {
-                  extractedHash = decodedText;
+                // Check if it's JSON with hash property
+                try {
+                  const qrData = JSON.parse(decodedText);
+                  extractedHash = qrData.hash || '';
+                } catch {
+                  // Treat as direct hash if it looks like one
+                  if (decodedText.startsWith('0x') && decodedText.length === 66) {
+                    extractedHash = decodedText;
+                  }
                 }
               }
+              
+              if (extractedHash) {
+                setCredentialHash(extractedHash);
+                setVerificationHash(extractedHash);
+                setInputMethod('hash');
+                setSelectedFile(null);
+                stopQRScanner();
+                toast({
+                  title: "QR Code scanned",
+                  description: "Hash extracted successfully",
+                });
+              } else {
+                toast({
+                  title: "Error",
+                  description: "No valid hash found in QR code",
+                  variant: "destructive",
+                });
+              }
+            },
+            (error: unknown) => {
+              console.warn('QR scan error:', error);
             }
-            
-            if (extractedHash) {
-              setCredentialHash(extractedHash);
-              setVerificationHash(extractedHash);
-              setInputMethod('hash');
-              setSelectedFile(null);
-              stopQRScanner();
-              toast({
-                title: "QR Code scanned",
-                description: "Hash extracted successfully",
-              });
-            } else {
-              toast({
-                title: "Error",
-                description: "No valid hash found in QR code",
-                variant: "destructive",
-              });
-            }
-          },
-          (error) => {
-            console.warn('QR scan error:', error);
-          }
-        );
+          );
+        } catch (error) {
+          console.error('Failed to load QR scanner:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load QR scanner",
+            variant: "destructive",
+          });
+          setShowQRScanner(false);
+        }
       }
     }, 100);
   };
@@ -246,12 +265,80 @@ function VerifyPageContent() {
   const isRevoked = result && !isNotFound && !result.valid;
   const isVerified = result && !isNotFound && result.valid;
 
+  // Record verification activity when result changes
+  useEffect(() => {
+    if (result && verificationHash) {
+      const recordActivity = async () => {
+        try {
+          let status: 'success' | 'failed' = 'success';
+          let error: string | undefined;
+          
+          if (isNotFound) {
+            status = 'failed';
+            error = 'Credential not found on blockchain';
+          } else if (isRevoked) {
+            status = 'failed';
+            error = 'Credential has been revoked';
+          }
+          
+          await fetch('/api/activity', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'VERIFY',
+              docHash: verificationHash,
+              status,
+              error
+            })
+          });
+        } catch (activityError) {
+          console.error('Failed to record verification activity:', activityError);
+        }
+      };
+      
+      recordActivity();
+    }
+  }, [result, verificationHash, isNotFound, isRevoked]);
+
+  // Record verification error activity
+  useEffect(() => {
+    if (verificationError && verificationHash) {
+      const recordErrorActivity = async () => {
+        try {
+          await fetch('/api/activity', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'VERIFY',
+              docHash: verificationHash,
+              status: 'failed',
+              error: 'Failed to verify credential on blockchain'
+            })
+          });
+        } catch (activityError) {
+          console.error('Failed to record verification error activity:', activityError);
+        }
+      };
+      
+      recordErrorActivity();
+    }
+  }, [verificationError, verificationHash]);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">🔍 Verify Credential</h1>
         <p className="text-gray-600">Verify the authenticity of a credential using multiple input methods</p>
       </div>
+      
+      {/* Wallet Connection Prompt */}
+      {!isWalletLoading && !hasWallet && (
+        <WalletPrompt className="mb-6" />
+      )}
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Input Methods */}
@@ -568,7 +655,12 @@ function VerifyPageContent() {
                 )}
 
                 {/* Actions */}
-                <div className="flex space-x-3">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                  <Link href="/dashboard" className="flex-1">
+                    <Button className="w-full">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
                   <Button onClick={resetVerification} variant="outline" className="flex-1">
                     Verify Another
                   </Button>
@@ -578,6 +670,7 @@ function VerifyPageContent() {
                         const verifyUrl = `${window.location.origin}/verify?hash=${verificationHash}`;
                         copyToClipboard(verifyUrl, 'Verification URL');
                       }}
+                      variant="outline"
                       className="flex-1"
                     >
                       Share Verification

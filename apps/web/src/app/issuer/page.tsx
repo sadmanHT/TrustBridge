@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -36,11 +36,8 @@ export default function IssuerPage() {
   const [degree, setDegree] = useState('');
   const [graduationYear, setGraduationYear] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [recipient, setRecipient] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUploadingToIPFS, setIsUploadingToIPFS] = useState(false);
+
   const [isProcessing, setIsProcessing] = useState(false);
-  const [txHash, setTxHash] = useState<string | null>(null);
   const [ipfsCid, setIpfsCid] = useState<string | null>(null);
   const [lastIssuedCredential, setLastIssuedCredential] = useState<IssuedCredential | null>(null);
   
@@ -115,7 +112,7 @@ export default function IssuerPage() {
       }
       
       // Upload to IPFS (optional)
-      setIsUploadingToIPFS(true);
+
       toast({
         title: 'Processing',
         description: 'Uploading to IPFS...',
@@ -132,7 +129,7 @@ export default function IssuerPage() {
           variant: 'default',
         });
       } finally {
-        setIsUploadingToIPFS(false);
+        // IPFS upload completed
       }
       
       // Issue credential on blockchain
@@ -152,35 +149,35 @@ export default function IssuerPage() {
             title: 'Transaction Submitted',
             description: 'Waiting for blockchain confirmation...',
           });
-        } catch (contractError: any) {
+        } catch (contractError: unknown) {
         console.error('Contract write error:', contractError);
         
         // Extract meaningful error message
         let errorMessage = 'Transaction failed';
-        if (contractError?.message) {
-          if (contractError.message.includes('User rejected')) {
+        if ((contractError as Error)?.message) {
+          if ((contractError as Error).message.includes('User rejected')) {
             errorMessage = 'Transaction was rejected by user';
-          } else if (contractError.message.includes('insufficient funds')) {
+          } else if ((contractError as Error).message.includes('insufficient funds')) {
             errorMessage = 'Insufficient funds for transaction';
-          } else if (contractError.message.includes('revert')) {
+          } else if ((contractError as Error).message.includes('revert')) {
             errorMessage = 'Contract execution failed - check if you are an approved issuer';
           } else {
-            errorMessage = contractError.message;
+            errorMessage = (contractError as Error).message;
           }
         }
         
         throw new Error(errorMessage);
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error processing credential:', error);
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to process credential',
+        description: (error as Error)?.message || 'Failed to process credential',
         variant: 'destructive',
       });
       setIsProcessing(false);
-      setIsUploadingToIPFS(false);
+  
     }
   };
   
@@ -245,7 +242,6 @@ export default function IssuerPage() {
   // Handle transaction error
   if (error) {
     setIsProcessing(false);
-    setIsUploadingToIPFS(false);
     
     // Extract meaningful error message
     let errorMessage = 'Transaction failed';
@@ -271,7 +267,6 @@ export default function IssuerPage() {
   // Handle transaction receipt error
   if (receiptError) {
     setIsProcessing(false);
-    setIsUploadingToIPFS(false);
     
     console.error('Transaction receipt error:', receiptError);
     toast({
@@ -285,7 +280,7 @@ export default function IssuerPage() {
     ? `${window.location.origin}/verify?hash=${lastIssuedCredential.hash}`
     : '';
 
-  const downloadQRCode = (url: string) => {
+  const downloadQRCode = () => {
     if (typeof window === 'undefined') return;
     
     const element = document.getElementById('qr-code-svg');
@@ -545,7 +540,7 @@ export default function IssuerPage() {
                   Scan to verify this credential
                 </p>
                 <Button
-                  onClick={() => downloadQRCode(verificationUrl)}
+                  onClick={() => downloadQRCode()}
                   variant="outline"
                   size="sm"
                   className="flex items-center space-x-2"

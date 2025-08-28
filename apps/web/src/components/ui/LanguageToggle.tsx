@@ -22,7 +22,7 @@ export function LanguageToggle() {
   const { t, i18n } = useTranslation('common');
   const [isChanging, setIsChanging] = useState(false);
 
-  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
+
 
   const handleLanguageChange = async (languageCode: string) => {
     if (languageCode === i18n.language || isChanging) return;

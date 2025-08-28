@@ -1,19 +1,16 @@
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
-import { Search, Upload, Hash, QrCode, CheckCircle, XCircle, AlertCircle, FileText, ExternalLink, Loader2 } from 'lucide-react';
+import { Search, Upload, Hash, QrCode, XCircle, AlertCircle, FileText, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { QRScanner } from '@/components/ui/QR';
 import { CopyField } from '@/components/ui/Copy';
-import { CopyButton } from '@/components/ui/copy-button';
 import { HashField } from '@/components/ui/Field';
 import { hashFile, isValidSHA256Hash } from '@/lib/sha256';
 import { verifyCredential, VerificationResult } from '@/lib/contract';
-import { formatAddress, formatTimestamp, formatFileSize, getIPFSUrl } from '@/lib/format';
+import { formatTimestamp, formatFileSize, getIPFSUrl } from '@/lib/format';
 import { getEtherscanUrl } from '@/lib/viem';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -100,7 +97,7 @@ export function VerifyCard({ className, initialHash, onVerificationComplete }: V
       setError(errorMessage);
       setState('error');
     }
-  }, [onVerificationComplete]);
+  }, [onVerificationComplete, toast]);
 
   const handleFileSelect = useCallback(async (file: File) => {
     try {

@@ -10,7 +10,7 @@ import { sepolia } from 'viem/chains';
 const SEPOLIA_CHAIN_ID = 11155111;
 
 export function ConnectButton() {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
 

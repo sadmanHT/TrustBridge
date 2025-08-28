@@ -45,7 +45,6 @@ export async function generateDiplomaPDF(data: DiplomaData): Promise<Uint8Array>
   const gold = rgb(0.8, 0.7, 0.2);
   const darkGray = rgb(0.2, 0.2, 0.2);
   const lightGray = rgb(0.5, 0.5, 0.5);
-  const white = rgb(1, 1, 1);
 
   // Draw gradient background (dark-friendly)
   // Create a subtle gradient effect with rectangles
@@ -290,6 +289,8 @@ export async function generateDiplomaPDF(data: DiplomaData): Promise<Uint8Array>
  * Helper function to format address for display
  */
 export function formatAddressForDiploma(address: string): string {
+  if (!address) return 'N/A';
+  if (address.length <= 14) return address;
   return `${address.slice(0, 8)}...${address.slice(-6)}`;
 }
 
@@ -297,5 +298,7 @@ export function formatAddressForDiploma(address: string): string {
  * Helper function to format hash for display
  */
 export function formatHashForDiploma(hash: string): string {
+  if (!hash) return 'N/A';
+  if (hash.length <= 18) return hash;
   return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
 }

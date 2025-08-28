@@ -3,9 +3,6 @@ import { sepolia } from 'viem/chains';
 import type { Address, Hash } from 'viem';
 import contractConfig from '../contractConfig.json';
 import type {
-  CredentialIssuedEvent,
-  CredentialRevokedEvent,
-  CredentialRegistryEvent,
   EventFilterOptions
 } from '../types/events';
 

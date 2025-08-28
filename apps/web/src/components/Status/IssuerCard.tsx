@@ -6,7 +6,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { CheckCircle, XCircle, Shield, RefreshCw, AlertCircle } from 'lucide-react';
 import { contractConfig } from '../../lib/contract';
-import { useState } from 'react';
+
 import { Skeleton } from '../ui/Skeleton';
 
 interface IssuerCardProps {
@@ -15,7 +15,6 @@ interface IssuerCardProps {
 
 export function IssuerCard({ className }: IssuerCardProps) {
   const { address, isConnected } = useAccount();
-  const [refreshKey, setRefreshKey] = useState(0);
 
   const { 
     data: isApprovedIssuer, 
@@ -31,7 +30,6 @@ export function IssuerCard({ className }: IssuerCardProps) {
   });
 
   const handleRefresh = async () => {
-    setRefreshKey(prev => prev + 1);
     await refetch();
   };
 

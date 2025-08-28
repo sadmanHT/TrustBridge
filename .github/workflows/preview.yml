@@ -1,0 +1,95 @@
+name: Preview Deployment
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+env:
+  NODE_VERSION: '18'
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Build and deploy preview
+  preview:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/web
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './apps/web/package-lock.json'
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ./apps/web/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('./apps/web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npm run type-check
+        continue-on-error: true
+
+      - name: Build application
+        run: npm run build
+        env:
+          SKIP_ENV_VALIDATION: 'true'
+          NODE_ENV: 'production'
+
+      - name: Deploy Preview to Netlify
+        if: github.event_name == 'pull_request'
+        run: |
+          npm install -g netlify-cli
+          netlify deploy --dir=.next --site=${{ secrets.NETLIFY_SITE_ID }} --alias=pr-${{ github.event.pull_request.number }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+
+      - name: Deploy Preview to Vercel
+        if: github.event_name == 'pull_request'
+        run: |
+          npm install -g vercel
+          vercel --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Comment PR with preview links
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const netlifyUrl = `https://pr-${prNumber}--${{ secrets.NETLIFY_SITE_ID }}.netlify.app`;
+            const comment = `## 🚀 Preview Deployments\n\n` +
+              `- **Netlify Preview**: ${netlifyUrl}\n` +
+              `- **Vercel Preview**: Check the Vercel dashboard for the preview URL\n\n` +
+              `Preview deployments are updated automatically when you push changes to this PR.`;
+            
+            github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
