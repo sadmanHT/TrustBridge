@@ -6,10 +6,10 @@ import {
   metaMaskWallet,
   injectedWallet,
 } from '@rainbow-me/rainbowkit/wallets';
-import { getEnvConfig } from './env';
+import { getEnvConfigSafe } from './env';
 
 // Load validated environment configuration
-const env = getEnvConfig();
+const env = getEnvConfigSafe();
 
 // WalletConnect warnings are now suppressed in the Providers component
 

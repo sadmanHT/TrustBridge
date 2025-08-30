@@ -1,10 +1,14 @@
-const { i18n } = require('./next-i18next.config');
+// const { i18n } = require('./next-i18next.config'); // Disabled for static export
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  i18n,
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true
+  },
   
   // Existing configuration
   experimental: {

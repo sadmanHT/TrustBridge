@@ -366,7 +366,8 @@ export function getEnvConfig(): EnvConfig {
  * Used for serverless compatibility during build
  */
 export function getEnvConfigSafe(): EnvConfig {
-  const isBuildTime = process.env.NODE_ENV === 'production' || process.env.SKIP_ENV_VALIDATION === 'true';
+  // Only use fallbacks during actual build time, not in production runtime
+  const isBuildTime = process.env.SKIP_ENV_VALIDATION === 'true' && !process.env.VERCEL_URL;
   
   if (isBuildTime) {
     // Return safe defaults during build
@@ -392,7 +393,35 @@ export function getEnvConfigSafe(): EnvConfig {
     };
   }
   
-  return getEnvConfig();
+  // In production runtime, try to load with validation but don't throw on client-side
+  try {
+    return getEnvConfig();
+  } catch (error) {
+    // If validation fails on client-side, return config with actual env vars
+    if (typeof window !== 'undefined') {
+      return {
+        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'client-side-unavailable',
+        NEXTAUTH_URL: process.env.NEXTAUTH_URL || getAutoDetectedNextAuthUrl(),
+        DATABASE_URL: process.env.DATABASE_URL || 'client-side-unavailable',
+        NEXT_PUBLIC_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000',
+        NEXT_PUBLIC_ALCHEMY_API_KEY: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || 'client-side-unavailable',
+        NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'client-side-unavailable',
+        NEXT_PUBLIC_DEFAULT_CHAIN_ID: process.env.NEXT_PUBLIC_DEFAULT_CHAIN_ID || '11155111',
+        NEXT_PUBLIC_NETWORK_NAME: process.env.NEXT_PUBLIC_NETWORK_NAME || 'sepolia',
+        NEXT_PUBLIC_RPC_URL: process.env.NEXT_PUBLIC_RPC_URL || '',
+        PINATA_API_KEY: process.env.PINATA_API_KEY || 'client-side-unavailable',
+        PINATA_SECRET_API_KEY: process.env.PINATA_SECRET_API_KEY || 'client-side-unavailable',
+        PINATA_JWT: process.env.PINATA_JWT || 'client-side-unavailable',
+        NEXT_PUBLIC_PINATA_GATEWAY_URL: process.env.NEXT_PUBLIC_PINATA_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/',
+        NEXT_PUBLIC_IPFS_GATEWAY: process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://ipfs.io/ipfs/',
+        NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || 'TrustBridge',
+        NEXT_PUBLIC_APP_DESCRIPTION: process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Blockchain Document Verification',
+        NEXT_PUBLIC_ENABLE_TESTNETS: process.env.NEXT_PUBLIC_ENABLE_TESTNETS || 'true',
+        NEXT_PUBLIC_DEBUG_MODE: process.env.NEXT_PUBLIC_DEBUG_MODE || 'false',
+      };
+    }
+    throw error;
+  }
 }
 
 /**

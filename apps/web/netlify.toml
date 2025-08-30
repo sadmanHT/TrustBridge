@@ -5,17 +5,11 @@
   # Build command to run
   command = "npm run build"
   
-  # Directory to publish (Next.js output directory)
-  publish = ".next"
-  
-  # Node.js version to use
-  environment = { NODE_VERSION = "18" }
+  # Directory to publish (static export output)
+  publish = "out"
 
-# Redirect all routes to Next.js for client-side routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Next.js routing is handled by @netlify/plugin-nextjs
+# No manual redirects needed
 
 # Security headers for enhanced security
 [[headers]]
@@ -48,6 +42,9 @@
 
 # Build environment configuration
 [build.environment]
+  # Node.js version to use
+  NODE_VERSION = "18"
+  
   # Ensure npm uses the correct registry
   NPM_CONFIG_REGISTRY = "https://registry.npmjs.org/"
   
@@ -75,11 +72,7 @@
 [functions."*"]
   max_duration = "30s"
 
-# Next.js API Routes as Functions
-[[functions]]
-  directory = "src/app/api"
-  included_files = ["src/**/*"]
-  node_bundler = "esbuild"
+# Next.js API Routes handled by @netlify/plugin-nextjs
 
 # Development settings
 [dev]
@@ -110,14 +103,7 @@
   # Branch deployment settings
   command = "npm run build"
 
-# Plugin configuration
-[[plugins]]
-  # Essential Next.js plugin for Netlify
-  package = "@netlify/plugin-nextjs"
-  
-  [plugins.inputs]
-    # Enable Next.js runtime features
-    distDir = ".next"
+# Static export - no plugins needed
 
 # Form handling (if using Netlify Forms)
 # [build.processing]
