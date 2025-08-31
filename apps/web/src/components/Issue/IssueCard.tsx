@@ -28,6 +28,7 @@ interface IssueCardProps {
   onSuccess?: (hash: string, txHash: string) => void;
   onError?: (error: string) => void;
   onFileProcessed?: (hash: string, ipfsCid: string) => void;
+  onSwitchToVerify?: () => void;
 }
 
 interface FileData {
@@ -39,7 +40,7 @@ interface FileData {
 
 type IssueStep = 'upload' | 'hashing' | 'ipfs' | 'preflight' | 'contract' | 'success' | 'error';
 
-export function IssueCard({ className, onSuccess, onError, onFileProcessed }: IssueCardProps) {
+export function IssueCard({ className, onSuccess, onError, onFileProcessed, onSwitchToVerify }: IssueCardProps) {
   const { address, isConnected } = useAccount();
   const router = useRouter();
   const { toast } = useToast();
@@ -464,13 +465,43 @@ export function IssueCard({ className, onSuccess, onError, onFileProcessed }: Is
         return;
       }
       
+      // Check if document hash already exists before proceeding
+      toast({
+        title: "Checking Document",
+        description: "Verifying if document has been issued before...",
+      });
+      
+      const documentHash = stringToBytes32(fileData.hash);
+      
+      try {
+        const { verifyCredential } = await import('@/lib/contract');
+        const existingCredential = await verifyCredential(documentHash);
+        
+        if (existingCredential.valid) {
+          const errorMessage = `This document has already been issued and exists on the blockchain.`;
+          setError(errorMessage);
+          setStep('error');
+          
+          toast({
+            title: "⚠️ Document Already Issued",
+            description: "This document has been previously issued and exists on the blockchain. Each document can only be issued once.",
+            variant: "destructive",
+            duration: 8000,
+          });
+          
+          onError?.(errorMessage);
+          return;
+        }
+      } catch (error) {
+        // If verification fails, it likely means the credential doesn't exist, which is good
+        console.log('Document verification check completed - document appears to be new');
+      }
+      
       // Simulate transaction before sending
       toast({
         title: "Simulating Transaction",
         description: "Testing transaction parameters...",
       });
-      
-      const documentHash = stringToBytes32(fileData.hash);
       
       // Validate args before proceeding to prevent silent failures
       if (!documentHash || documentHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
@@ -805,6 +836,9 @@ export function IssueCard({ className, onSuccess, onError, onFileProcessed }: Is
         if (errorObj?.message?.includes('User rejected') || errorObj?.code === 4001) {
           errorMessage = 'Transaction was rejected by user';
           errorTitle = "Transaction Rejected";
+        } else if (errorObj?.message?.includes('CredentialAlreadyExists') || parsedError.includes('CredentialAlreadyExists')) {
+          errorMessage = 'This document has already been issued and exists on the blockchain. Each document can only be issued once.';
+          errorTitle = "⚠️ Document Already Issued";
         } else if (errorObj?.message?.includes('insufficient funds')) {
           errorMessage = 'Insufficient funds for gas fees';
           errorTitle = "Insufficient Balance";
@@ -1173,15 +1207,50 @@ export function IssueCard({ className, onSuccess, onError, onFileProcessed }: Is
   };
 
   const renderError = () => (
-    <div className="space-y-4">
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-      
-      <Button onClick={resetState} variant="outline" className="w-full">
-        Try Again
-      </Button>
+    <div className="space-y-6">
+      <div className="relative">
+        <Alert variant="destructive" className="border-2 border-red-500/50 bg-red-50/50 dark:bg-red-950/20 shadow-lg">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">
+                Document Issue Failed
+              </h3>
+              <AlertDescription className="text-red-700 dark:text-red-300 text-sm leading-relaxed">
+                {error}
+              </AlertDescription>
+              {error.includes('already been issued') && (
+                <div className="mt-3 p-3 bg-red-100/50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800">
+                  <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                    💡 Tip: Each document can only be issued once to maintain blockchain integrity.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </Alert>
+      </div>
+      <div className="flex gap-3">
+        <Button 
+          onClick={resetState} 
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all duration-200 hover:shadow-lg"
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Try with Different Document
+        </Button>
+        <Button 
+           onClick={onSwitchToVerify || (() => window.location.href = '/verify')} 
+           variant="outline"
+           className="flex-1 border-gray-300 hover:border-gray-400 transition-all duration-200"
+         >
+           <Shield className="w-4 h-4 mr-2" />
+           Verify Existing
+         </Button>
+      </div>
     </div>
   );
 

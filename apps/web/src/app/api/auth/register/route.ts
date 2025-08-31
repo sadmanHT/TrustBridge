@@ -7,6 +7,15 @@ const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters long'),
   name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
+  role: z.enum(['issuer', 'verifier'], {
+    required_error: 'Account type is required',
+    invalid_type_error: 'Account type must be either issuer or verifier'
+  }),
+  paymentMethod: z.enum(['bkash', 'nagad'], {
+    required_error: 'Payment method is required',
+    invalid_type_error: 'Payment method must be either bkash or nagad'
+  }),
+  paymentTxnId: z.string().min(1, 'Transaction ID is required').trim(),
 })
 
 export async function POST(request: NextRequest) {
@@ -25,10 +34,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { email, password, name } = validationResult.data
+    const { email, password, name, role, paymentMethod, paymentTxnId } = validationResult.data
 
-    // Create user using existing auth utility
-    const user = await createUser(email, password, name)
+    // Create user using existing auth utility with role and payment info
+    const user = await createUser(email, password, name, role, paymentMethod, paymentTxnId)
 
     // Return success response (without password)
     return NextResponse.json(

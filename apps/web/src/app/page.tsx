@@ -50,7 +50,10 @@ export default function HomePage() {
       </a>
       
       {/* Hero Section */}
-      <Hero />
+      <Hero 
+        onIssueClick={() => setActiveTab('issue')}
+        onVerifyClick={() => setActiveTab('verify')}
+      />
 
       {/* Header */}
       <motion.div
@@ -192,6 +195,7 @@ className={cn(
                       <IssueCard 
                         onSuccess={handleIssueComplete}
                         className="border-0 bg-transparent shadow-none"
+                        onSwitchToVerify={() => setActiveTab('verify')}
                       />
                     </CardContent>
                   </Card>

@@ -8,29 +8,44 @@ import { activityRateLimiter, createRateLimitHeaders } from '@/lib/rate-limiter'
 
 // Activity validation schema that matches Prisma model
 const activitySchema = z.object({
-  type: z.enum(['ISSUE', 'VERIFY']),
-  wallet: z.string().min(4, 'Wallet address required'),
+  type: z.enum(['ISSUE', 'VERIFY', 'REVOKE']),
+  wallet: z.string().min(4, 'Wallet address required').optional(),
   docHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/, 'Invalid document hash format'),
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'Invalid transaction hash').optional(),
   cid: z.string().optional(),
   status: z.enum(['success', 'failed', 'revoked']),
+  error: z.string().optional(), // Allow error messages for failed activities
+}).refine((data) => {
+  // Wallet is required for ISSUE type, optional for VERIFY
+  if (data.type === 'ISSUE' && !data.wallet) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Wallet address is required for ISSUE activities",
+  path: ["wallet"]
 })
 
 
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
+    // Parse request body first to check activity type
+    const body = await request.json()
+    const activityType = body.type
+    
+    // Check authentication - required for ISSUE and REVOKE, optional for VERIFY
     const session = await getServerSession(authOptions)
-    if (!session?.user || !(session as Session).user.id) {
+    if ((activityType === 'ISSUE' || activityType === 'REVOKE') && (!session?.user || !(session as Session).user.id)) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please log in to record activities.' },
+        { error: 'Unauthorized. Please log in to perform this action.' },
         { status: 401 }
       )
     }
 
-    // Apply rate limiting
-    const rateLimitResult = activityRateLimiter.check((session as Session).user.id)
+    // Apply rate limiting (use session user ID if available, otherwise use IP)
+    const rateLimitKey = session?.user ? (session as Session).user.id : request.ip || 'anonymous'
+    const rateLimitResult = activityRateLimiter.check(rateLimitKey)
     const rateLimitHeaders = createRateLimitHeaders(rateLimitResult.remaining, rateLimitResult.resetTime)
     
     if (!rateLimitResult.allowed) {
@@ -45,9 +60,6 @@ export async function POST(request: NextRequest) {
         }
       )
     }
-
-    // Parse and validate request body
-    const body = await request.json()
     const validationResult = activitySchema.safeParse(body)
     
     if (!validationResult.success) {
@@ -68,15 +80,45 @@ export async function POST(request: NextRequest) {
     // Create the activity record
     const activity = await prisma.activity.create({
       data: {
-        userId: (session as Session).user.id,
+        userId: session?.user ? (session as Session).user.id : null,
         type: activityData.type,
-        wallet: activityData.wallet,
+        wallet: activityData.wallet || null,
         docHash: activityData.docHash,
         txHash: activityData.txHash,
         cid: activityData.cid,
         status: activityData.status,
       },
     })
+
+    // Update verification tracking for verifier users
+    if (activityData.type === 'VERIFY' && 
+        activityData.status === 'success' && 
+        session?.user && 
+        (session as Session).user.id) {
+      
+      const userId = (session as Session).user.id
+      
+      // Get user to check role
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true }
+      })
+      
+      // Only track for verifier users
+      if (user?.role === 'VERIFIER') {
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            verificationCount: {
+              increment: 1
+            },
+            verificationFeesDue: {
+              increment: 5.00 // $5 per verification
+            }
+          }
+        })
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -126,7 +168,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause with proper typing
     interface WhereClause {
-      userId: string;
+      userId?: string | null;
       type?: 'ISSUE' | 'VERIFY';
       status?: string;
       OR?: Array<{
@@ -141,12 +183,16 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const where: WhereClause = {
-      userId: (session as Session).user.id,
+    // Include all activities (both user and anonymous) for dashboard view
+    const where: WhereClause = {}
+    
+    // Add user filter only for ISSUE/REVOKE activities or when specifically requested
+    if (type === 'ISSUE' || type === 'REVOKE' || searchParams.get('userOnly') === 'true') {
+      where.userId = (session as Session).user.id
     }
     
-    if (type && ['ISSUE', 'VERIFY'].includes(type)) {
-      where.type = type as 'ISSUE' | 'VERIFY'
+    if (type && ['ISSUE', 'VERIFY', 'REVOKE'].includes(type)) {
+      where.type = type as 'ISSUE' | 'VERIFY' | 'REVOKE'
     }
 
     if (status) {

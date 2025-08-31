@@ -16,6 +16,9 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [name, setName] = useState('')
+  const [role, setRole] = useState('verifier')
+  const [paymentMethod, setPaymentMethod] = useState('bkash')
+  const [paymentTxnId, setPaymentTxnId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -40,6 +43,26 @@ export default function RegisterPage() {
       return
     }
 
+    // Validate role
+    if (!role || !['issuer', 'verifier'].includes(role)) {
+      setError('Please select a valid account type')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate payment fields
+    if (!paymentMethod || !['bkash', 'nagad'].includes(paymentMethod)) {
+      setError('Please select a valid payment method')
+      setIsLoading(false)
+      return
+    }
+
+    if (!paymentTxnId.trim()) {
+      setError('Transaction ID is required')
+      setIsLoading(false)
+      return
+    }
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -50,6 +73,9 @@ export default function RegisterPage() {
           email,
           password,
           name,
+          role,
+          paymentMethod,
+          paymentTxnId: paymentTxnId.trim(),
         }),
       })
 
@@ -161,6 +187,103 @@ export default function RegisterPage() {
                   disabled={isLoading}
                   className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
                 />
+              </div>
+              
+              {/* Account Type Selection */}
+              <div className="space-y-2">
+                <Label className="text-slate-200">Account Type</Label>
+                <div className="space-y-3">
+                  <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border border-slate-600 hover:border-slate-500 transition-colors">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="issuer"
+                      checked={role === 'issuer'}
+                      onChange={(e) => setRole(e.target.value)}
+                      disabled={isLoading}
+                      className="mt-1 text-blue-500 focus:ring-blue-500"
+                    />
+                    <div>
+                      <div className="text-slate-200 font-medium">Issuer (University/Institution)</div>
+                      <div className="text-sm text-slate-400">Issue credentials and certificates. Includes 6-month free trial, then ৳150,000/year.</div>
+                    </div>
+                  </label>
+                  <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border border-slate-600 hover:border-slate-500 transition-colors">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="verifier"
+                      checked={role === 'verifier'}
+                      onChange={(e) => setRole(e.target.value)}
+                      disabled={isLoading}
+                      className="mt-1 text-blue-500 focus:ring-blue-500"
+                    />
+                    <div>
+                      <div className="text-slate-200 font-medium">Verifier (Employer/Agency)</div>
+                      <div className="text-sm text-slate-400">Verify credentials and certificates. Pay ৳98 per verification.</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              
+              {/* Payment Verification Section */}
+              <div className="space-y-4 pt-4 border-t border-slate-600">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-white mb-2">Payment for Verification (৳ 50)</h3>
+                  <p className="text-sm text-slate-400 mb-4">
+                    Enter your bKash/Nagad transaction ID. For now, we assume payments are completed.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-slate-200">Payment Method</Label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="bkash"
+                        checked={paymentMethod === 'bkash'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        disabled={isLoading}
+                        className="text-blue-500 focus:ring-blue-500"
+                      />
+                      <span className="text-slate-200">bKash</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="nagad"
+                        checked={paymentMethod === 'nagad'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        disabled={isLoading}
+                        className="text-blue-500 focus:ring-blue-500"
+                      />
+                      <span className="text-slate-200">Nagad</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="paymentTxnId" className="text-slate-200">Transaction ID</Label>
+                  <Input
+                    id="paymentTxnId"
+                    type="text"
+                    placeholder="e.g., 8XY12Z3AB"
+                    value={paymentTxnId}
+                    onChange={(e) => setPaymentTxnId(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="text-center">
+                  <a href="#" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
+                    How to pay via bKash/Nagad (coming soon)
+                  </a>
+                </div>
               </div>
               
               <Button

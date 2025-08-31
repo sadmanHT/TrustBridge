@@ -81,6 +81,24 @@ export function VerifyCard({ className, initialHash, onVerificationComplete }: V
           description: "Document has been verified on the blockchain",
           variant: "default"
         });
+        
+        // Record verification activity in database
+        try {
+          await fetch('/api/activity', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'VERIFY',
+              docHash: hash,
+              status: 'success',
+              cid: result.cidOrEmpty || undefined
+            })
+          });
+        } catch (error) {
+          console.error('Failed to record verification activity:', error);
+        }
       } else {
         setState('invalid');
         // Show warning toast for invalid/revoked credentials
@@ -89,6 +107,23 @@ export function VerifyCard({ className, initialHash, onVerificationComplete }: V
           description: "Document was not found or has been revoked",
           variant: "destructive"
         });
+        
+        // Record failed verification activity in database
+        try {
+          await fetch('/api/activity', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'VERIFY',
+              docHash: hash,
+              status: result.issuer === '0x0000000000000000000000000000000000000000' ? 'failed' : 'revoked'
+            })
+          });
+        } catch (error) {
+          console.error('Failed to record verification activity:', error);
+        }
       }
       
       onVerificationComplete?.(verificationData);

@@ -14,11 +14,24 @@ declare module 'next-auth' {
       email: string
       name?: string | null
       role: string
+      isVerified: boolean
       image?: string | null
+      createdAt?: Date
+      subscriptionStatus?: string
+      trialEndDate?: Date
+      renewalDate?: Date
+      verificationCount: number
+      verificationFeesDue: number
     }
   }
   interface User {
     role: string
+    isVerified: boolean
+    subscriptionStatus?: string
+    trialEndDate?: Date
+    renewalDate?: Date
+    verificationCount: number
+    verificationFeesDue: number
   }
 }
 
@@ -26,6 +39,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string
     role: string
+    isVerified: boolean
   }
 }
 
@@ -38,7 +52,14 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return await bcrypt.compare(password, hashedPassword)
 }
 
-export async function createUser(email: string, password: string, name?: string) {
+export async function createUser(
+  email: string, 
+  password: string, 
+  name?: string, 
+  role?: string,
+  paymentMethod?: string, 
+  paymentTxnId?: string
+) {
   const existingUser = await prisma.user.findUnique({
     where: { email }
   })
@@ -48,12 +69,28 @@ export async function createUser(email: string, password: string, name?: string)
   }
 
   const hashedPassword = await hashPassword(password)
+  
+  // Calculate subscription data based on role
+  const now = new Date()
+  const subscriptionData = role === 'issuer' ? {
+    subscriptionStatus: 'trial',
+    trialEndDate: new Date(now.getTime() + 6 * 30 * 24 * 60 * 60 * 1000), // 6 months from now
+    renewalDate: new Date(now.getTime() + 6 * 30 * 24 * 60 * 60 * 1000), // Same as trial end for now
+  } : {}
 
   return await prisma.user.create({
     data: {
       email,
       password: hashedPassword,
       name: name || email.split('@')[0],
+      role: role === 'issuer' ? 'ISSUER' : 'VERIFIER',
+      isVerified: true, // Set as verified for payment users
+      paymentMethod,
+      paymentTxnId,
+      paymentStatus: 'assumed_paid',
+      verificationCount: 0,
+      verificationFeesDue: 0,
+      ...subscriptionData,
     }
   })
 }
@@ -120,6 +157,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.isVerified = user.isVerified
       }
       return token
     },
@@ -127,6 +165,22 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.id
         session.user.role = token.role
+        session.user.isVerified = token.isVerified
+        // Fetch fresh user data from database to ensure we have all fields
+        const user = await prisma.user.findUnique({
+          where: { id: token.id }
+        })
+        if (user) {
+          session.user.name = user.name
+          session.user.email = user.email
+          session.user.createdAt = user.createdAt
+          session.user.isVerified = user.isVerified // Use fresh data from DB
+          session.user.subscriptionStatus = user.subscriptionStatus
+          session.user.trialEndDate = user.trialEndDate
+          session.user.renewalDate = user.renewalDate
+          session.user.verificationCount = user.verificationCount
+          session.user.verificationFeesDue = user.verificationFeesDue
+        }
       }
       return session
     },

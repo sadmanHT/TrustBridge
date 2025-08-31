@@ -55,10 +55,10 @@ export function IssuerCard({ className }: IssuerCardProps) {
         icon: <CheckCircle className="h-5 w-5 text-green-500" />,
         badge: (
           <Badge variant="default" className="bg-green-100 text-green-800">
-            ✅ Approved Issuer
+            ✅ Authorized Issuer
           </Badge>
         ),
-        message: "You can issue credentials on the blockchain"
+        message: "You have full permission to issue and manage credentials on the blockchain"
       };
     }
 
@@ -78,7 +78,12 @@ export function IssuerCard({ className }: IssuerCardProps) {
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Issuer Status</CardTitle>
+        <div className="flex-1">
+          <CardTitle className="text-sm font-medium">Issuer Authorization</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Your permission level to issue credentials on this platform
+          </p>
+        </div>
         <div className="ml-auto flex items-center space-x-2">
           <Shield className="h-4 w-4" />
           {isConnected && (
@@ -97,23 +102,28 @@ export function IssuerCard({ className }: IssuerCardProps) {
       <CardContent>
         <div className="space-y-4">
           {/* Status Display */}
-          <div className="flex items-center space-x-2">
-            {status.icon}
-            {status.badge}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              {status.icon}
+              {status.badge}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {status.message}
+            </p>
           </div>
-
-          {/* Status Message */}
-          <p className="text-xs text-muted-foreground">
-            {status.message}
-          </p>
 
           {/* Connected Address */}
           {isConnected && address && (
             <div className="pt-2 border-t">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Your Address:
-                </span>
+                <div className="flex-1">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Your Wallet Address:
+                  </span>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your unique blockchain identity for issuing credentials
+                  </p>
+                </div>
               </div>
               <p className="text-xs font-mono bg-muted p-2 rounded border mt-1">
                 {address.slice(0, 6)}...{address.slice(-4)}

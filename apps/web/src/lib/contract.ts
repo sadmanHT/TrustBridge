@@ -599,7 +599,7 @@ export async function issueCredential(
  */
 export async function revokeCredential(
   documentHash: `0x${string}`,
-  account: Address
+  issuerAccount: Address
 ): Promise<{ txHash: `0x${string}`; receipt: TransactionReceipt }> {
   let writeClient: WalletClient | null = null;
   let publicClient: PublicClient | null = null;
@@ -626,13 +626,38 @@ export async function revokeCredential(
       throw new Error('Contract address not configured');
     }
 
-    // Submit transaction using writeContract
+    // First, verify that the credential exists and get its issuer
+    const credentialDetails = await verifyCredential(documentHash);
+    if (!credentialDetails.issuer || credentialDetails.issuer === '0x0000000000000000000000000000000000000000') {
+      throw new Error('Credential not found');
+    }
+
+    // Verify that the provided issuer account matches the credential's issuer
+    if (credentialDetails.issuer.toLowerCase() !== issuerAccount.toLowerCase()) {
+      throw new Error(`Unauthorized: Only the original issuer (${credentialDetails.issuer}) can revoke this credential`);
+    }
+
+    // Get the current accounts from MetaMask
+    const accounts = await writeClient.getAddresses();
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts available in wallet');
+    }
+
+    // Check if the issuer account is available in the connected wallet
+    const issuerAccountLower = issuerAccount.toLowerCase();
+    const availableAccount = accounts.find(acc => acc.toLowerCase() === issuerAccountLower);
+    
+    if (!availableAccount) {
+      throw new Error(`Issuer account ${issuerAccount} is not available in the connected wallet. Available accounts: ${accounts.join(', ')}`);
+    }
+
+    // Submit transaction using writeContract with the correct issuer account
     const txHash = await writeClient.writeContract({
       address,
       abi: contractABI,
       functionName: 'revokeCredential',
       args: [documentHash],
-      account,
+      account: availableAccount,
       chain: null
     });
 

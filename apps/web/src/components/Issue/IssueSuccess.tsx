@@ -10,6 +10,8 @@ import { CopyField } from '@/components/ui/Copy';
 import { useToast } from '@/hooks/use-toast';
 import { generateDiplomaPDF } from '@/lib/diploma';
 import { cn } from '@/lib/utils';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 
 interface IssueSuccessProps {
   hash: string;
@@ -21,6 +23,21 @@ interface IssueSuccessProps {
 
 export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSuccessProps) {
   const { toast } = useToast();
+  const { data: session, status } = useSession();
+  
+  // Show loading state while session is loading
+  if (status === 'loading') {
+    return (
+      <Card className={cn("w-full", className)}>
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-slate-600">Loading session...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/verify?hash=${encodeURIComponent(hash)}`;
   const etherscanUrl = `https://etherscan.io/tx/${txHash}`;
@@ -69,10 +86,21 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
       });
 
       // Prepare diploma data
+      const issuerName = session?.user?.name || session?.user?.email?.split('@')[0] || 'Account Holder';
+      
+      // Show toast if user is not logged in
+      if (!session?.user) {
+        toast({
+          title: "Not Logged In",
+          description: "Log in to have your name appear on the certificate instead of 'Account Holder'",
+          variant: "default",
+        });
+      }
+      
       const diplomaData = {
         holderName: 'Certificate Holder',
         credentialTitle: fileName ? fileName.replace(/\.[^/.]+$/, '') : 'Digital Credential',
-        issuerAddress: 'Blockchain Issuer', // This could be passed as a prop if available
+        issuerAddress: issuerName, // Use actual user name or email prefix
         txHash: txHash,
         docHash: hash,
         issuedAtISO: new Date().toISOString(),
@@ -147,6 +175,16 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
         </CardTitle>
         <CardDescription>
           Your document has been verified and stored on the blockchain.
+          {!session?.user && (
+            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+              💡 <Link href="/login" className="underline font-medium">Log in</Link> to have your name appear on the certificate instead of "Account Holder"
+            </div>
+          )}
+          {session?.user && (
+            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+              ✓ Certificate will be issued to: <strong>{session.user.name || session.user.email?.split('@')[0] || 'Account Holder'}</strong>
+            </div>
+          )}
         </CardDescription>
       </CardHeader>
 
@@ -237,7 +275,7 @@ export function IssueSuccess({ hash, txHash, cid, fileName, className }: IssueSu
             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold shadow-lg shadow-green-500/25 transition-all duration-300 hover:shadow-green-500/40 hover:scale-[1.02]"
           >
             <Download className="h-4 w-4 mr-2" />
-            Download Diploma
+            Download Certification PDF
           </Button>
           
           <Button 

@@ -70,50 +70,86 @@ function SuccessContent() {
       return;
     }
 
+    let url: string | null = null;
+    
     try {
       toast({
-        title: 'Preparing PDF',
-        description: 'Generating your credential PDF...',
-      });
-      
-      // Use the same PDF generation logic from IssueSuccess component
-      const response = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ hash }),
+        title: 'Generating Diploma',
+        description: 'Creating your digital diploma PDF...',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate PDF');
-      }
+      // Generate verification URL
+      const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/verify?hash=${encodeURIComponent(hash)}`;
 
-      const pdfBytes = await response.arrayBuffer();
+      // Generate QR code as data URL
+      const qrCodeDataUrl = await new Promise<string>((resolve, reject) => {
+        try {
+          // Import QRCode dynamically and render
+          import('qrcode').then(QRCodeLib => {
+            QRCodeLib.toDataURL(verificationUrl, {
+              width: 200,
+              margin: 2,
+              color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+              }
+            }, (err, url) => {
+              if (err) reject(err);
+              else resolve(url);
+            });
+          }).catch(reject);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      // Prepare diploma data
+      const diplomaData = {
+        holderName: 'Certificate Holder',
+        credentialTitle: 'Verification Certificate by TrustBridge',
+        issuerAddress: 'Blockchain Issuer',
+        txHash: tx || 'N/A',
+        docHash: hash,
+        issuedAtISO: new Date().toISOString(),
+        qrPngDataUrl: qrCodeDataUrl,
+      };
+
+      // Import and use the diploma generation function
+      const { generateDiplomaPDF } = await import('@/lib/diploma');
+      const pdfBytes = await generateDiplomaPDF(diplomaData);
+
+      // Create blob and download
+      const arrayBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       
       if (typeof window !== 'undefined') {
-        const blob = new Blob([pdfBytes.slice(0) as ArrayBuffer], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
+        url = URL.createObjectURL(blob);
+        
         const link = document.createElement('a');
         link.href = url;
-        link.download = `credential-${hash.slice(0, 8)}.pdf`;
+        link.download = 'TrustBridge-Verification-Certificate.pdf';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast({
-          title: 'Success',
-          description: 'PDF downloaded successfully!',
-        });
       }
-    } catch (error) {
-      console.error('PDF download failed:', error);
+
       toast({
-        title: 'Error',
-        description: 'Failed to download PDF. Please try again.',
+        title: 'Certificate Downloaded',
+        description: 'Your verification certificate has been saved as TrustBridge-Verification-Certificate.pdf',
+      });
+
+    } catch (error) {
+      console.error('Error generating diploma:', error);
+      toast({
+        title: 'Download Failed',
+        description: error instanceof Error ? error.message : 'Failed to generate diploma',
         variant: 'destructive',
       });
+    } finally {
+      // Always revoke the object URL to prevent memory leaks
+      if (url && typeof window !== 'undefined') {
+        URL.revokeObjectURL(url);
+      }
     }
   };
 
@@ -272,7 +308,7 @@ function SuccessContent() {
                 </Button>
               </Link>
               
-              <Link href={`/verify?hash=${hash}`} className="flex-1">
+              <Link href="/" className="flex-1">
                 <Button variant="outline" className="w-full" size="lg">
                   <Eye className="h-4 w-4 mr-2" />
                   Go to Verify
@@ -286,10 +322,10 @@ function SuccessContent() {
                 className="flex-1"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download Diploma PDF
+                Download Certification PDF
               </Button>
               
-              <Link href="/issue" className="flex-1">
+              <Link href="/" className="flex-1">
                 <Button variant="secondary" size="lg" className="w-full">
                   Issue Another
                 </Button>

@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -39,19 +39,30 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  password      String    // bcrypt hash
-  role          Role      @default(USER)
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  wallets       UserWallet[]
-  activities    Activity[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  name                String?
+  password            String    // bcrypt hash
+  role                UserRole  @default(VERIFIER) // "issuer" or "verifier"
+  emailVerified       DateTime?
+  image               String?
+  isVerified          Boolean   @default(false)
+  paymentMethod       String?   // 'bkash' | 'nagad'
+  paymentTxnId        String?
+  paymentStatus       String?   @default("unpaid") // 'assumed_paid' | 'unpaid'
+  // Subscription fields for issuers
+  subscriptionStatus  String?   // "trial" | "active" | "expired"
+  trialEndDate        DateTime?
+  renewalDate         DateTime?
+  // Verification tracking for verifiers
+  verificationCount   Int       @default(0)
+  verificationFeesDue Int       @default(0)
+  accounts            Account[]
+  sessions            Session[]
+  wallets             UserWallet[]
+  activities          Activity[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model VerificationToken {
@@ -73,15 +84,15 @@ model UserWallet {
 
 model Activity {
   id        String       @id @default(cuid())
-  userId    String
+  userId    String?
   type      ActivityType // ISSUE | VERIFY
-  wallet    String
+  wallet    String?
   docHash   String
   txHash    String?
   cid       String?
   status    String       // success | failed | revoked
   createdAt DateTime     @default(now())
-  user      User         @relation(fields: [userId], references: [id])
+  user      User?        @relation(fields: [userId], references: [id])
 }
 
 enum Role {
@@ -89,7 +100,13 @@ enum Role {
   ADMIN
 }
 
+enum UserRole {
+  ISSUER
+  VERIFIER
+}
+
 enum ActivityType {
   ISSUE
   VERIFY
+  REVOKE
 }

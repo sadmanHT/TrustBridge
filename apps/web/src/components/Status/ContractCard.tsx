@@ -31,37 +31,55 @@ export function ContractCard({ className }: ContractCardProps) {
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Contract</CardTitle>
+        <div className="flex-1">
+          <CardTitle className="text-sm font-medium">Smart Contract Status</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            The blockchain contract that powers credential verification
+          </p>
+        </div>
         <FileText className="h-4 w-4 ml-auto" />
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {/* Contract Status */}
-          <div className="flex items-center space-x-2">
-            {isDeployed ? (
-              <>
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <Badge variant="default" className="bg-green-100 text-green-800">
-                  Deployed
-                </Badge>
-              </>
-            ) : (
-              <>
-                <div className="h-5 w-5 rounded-full bg-red-500" />
-                <Badge variant="destructive">
-                  Not Deployed
-                </Badge>
-              </>
-            )}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              {isDeployed ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    ✅ Deployed & Active
+                  </Badge>
+                </>
+              ) : (
+                <>
+                  <div className="h-5 w-5 rounded-full bg-red-500" />
+                  <Badge variant="destructive">
+                    ❌ Not Deployed
+                  </Badge>
+                </>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {isDeployed 
+                ? "The smart contract is live on Sepolia testnet and ready to process credentials"
+                : "The smart contract needs to be deployed before you can issue or verify credentials"
+              }
+            </p>
           </div>
 
           {/* Contract Address */}
           {isDeployed && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Address:
-                </span>
+                <div className="flex-1">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Contract Address:
+                  </span>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Unique blockchain identifier for this contract
+                  </p>
+                </div>
                 <div className="flex items-center space-x-1">
                   <CopyButton 
                     text={contractAddress}
@@ -91,9 +109,14 @@ export function ContractCard({ className }: ContractCardProps) {
           {isDeployed && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Owner:
-                </span>
+                <div className="flex-1">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Contract Owner:
+                  </span>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Administrator who deployed and controls this contract
+                  </p>
+                </div>
                 {owner && typeof owner === 'string' && (
                   <div className="flex items-center space-x-1">
                     <CopyButton 

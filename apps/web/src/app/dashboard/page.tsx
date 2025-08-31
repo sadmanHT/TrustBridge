@@ -1,59 +1,14 @@
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 import { DashboardClient } from '@/components/Dashboard/DashboardClient'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Calendar, CreditCard, Clock } from 'lucide-react'
 import { Session } from 'next-auth'
 
-// Server component for KPIs calculation
-async function getKPIs(userId: string) {
-  const now = new Date()
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-
-  const [totalIssued, totalVerified, last7dIssued, last7dVerified] = await Promise.all([
-    prisma.activity.count({
-      where: {
-        userId,
-        type: 'ISSUE',
-        status: 'success'
-      }
-    }),
-    prisma.activity.count({
-      where: {
-        userId,
-        type: 'VERIFY',
-        status: 'success'
-      }
-    }),
-    prisma.activity.count({
-      where: {
-        userId,
-        type: 'ISSUE',
-        status: 'success',
-        createdAt: {
-          gte: sevenDaysAgo
-        }
-      }
-    }),
-    prisma.activity.count({
-      where: {
-        userId,
-        type: 'VERIFY',
-        status: 'success',
-        createdAt: {
-          gte: sevenDaysAgo
-        }
-      }
-    })
-  ])
-
-  return {
-    totalIssued,
-    totalVerified,
-    last7dIssued,
-    last7dVerified
-  }
-}
+// Force revalidation on every request to ensure fresh data
+export const revalidate = 0
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -61,8 +16,6 @@ export default async function DashboardPage() {
   if (!(session as Session)?.user?.id) {
     redirect('/login?from=/dashboard')
   }
-
-  const kpis = await getKPIs((session as Session).user.id)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
@@ -77,66 +30,160 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-slate-800/50 border border-slate-700 backdrop-blur-sm rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm font-medium">Total Issued</p>
-                <p className="text-3xl font-bold text-white">{kpis.totalIssued}</p>
-              </div>
-              <div className="h-12 w-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <svg className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
+        {/* Subscription Information for Issuers */}
+        {(session as Session).user.role === 'ISSUER' && (
+          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center space-x-2">
+                <CreditCard className="h-5 w-5" />
+                <span>Subscription Plan</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Subscription Status */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-300">Status</span>
+                  </div>
+                  <Badge 
+                    variant={(session as Session).user.subscriptionStatus === 'trial' ? 'default' : 'secondary'}
+                    className={(session as Session).user.subscriptionStatus === 'trial' ? 'bg-green-600 text-white' : ''}
+                  >
+                    {(session as Session).user.subscriptionStatus === 'trial' ? '🎯 Free Trial' : '💳 Active Subscription'}
+                  </Badge>
+                </div>
 
-          <div className="bg-slate-800/50 border border-slate-700 backdrop-blur-sm rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm font-medium">Total Verified</p>
-                <p className="text-3xl font-bold text-white">{kpis.totalVerified}</p>
-              </div>
-              <div className="h-12 w-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <svg className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-            </div>
-          </div>
+                {/* Trial End Date */}
+                {(session as Session).user.subscriptionStatus === 'trial' && (session as Session).user.trialEndDate && (
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm font-medium text-slate-300">Trial Ends</span>
+                    </div>
+                    <p className="text-white font-mono text-sm">
+                      {new Date((session as Session).user.trialEndDate!).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
 
-          <div className="bg-slate-800/50 border border-slate-700 backdrop-blur-sm rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm font-medium">Issued (7d)</p>
-                <p className="text-3xl font-bold text-white">{kpis.last7dIssued}</p>
+                {/* Renewal Date */}
+                {(session as Session).user.renewalDate && (
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm font-medium text-slate-300">Next Renewal</span>
+                    </div>
+                    <p className="text-white font-mono text-sm">
+                      {new Date((session as Session).user.renewalDate!).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="h-12 w-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                <svg className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-slate-800/50 border border-slate-700 backdrop-blur-sm rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-400 text-sm font-medium">Verified (7d)</p>
-                <p className="text-3xl font-bold text-white">{kpis.last7dVerified}</p>
+              {/* Pricing Information */}
+              <div className="pt-4 border-t border-slate-600">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Yearly Subscription</p>
+                    <p className="text-slate-400 text-xs">Unlimited credential issuance</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-white">$1,200</p>
+                    <p className="text-slate-400 text-xs">per year</p>
+                  </div>
+                </div>
               </div>
-              <div className="h-12 w-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                <svg className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Activity Table */}
+              {/* Trial Information */}
+              {(session as Session).user.subscriptionStatus === 'trial' && (
+                <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3">
+                  <p className="text-blue-200 text-sm">
+                    🎉 You're currently on a <strong>6-month free trial</strong>. Enjoy full access to all issuer features!
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Verification Information for Verifiers */}
+        {(session as Session).user.role === 'VERIFIER' && (
+          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center space-x-2">
+                <CreditCard className="h-5 w-5" />
+                <span>Verification Usage</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Verification Count */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-300">Total Verifications</span>
+                  </div>
+                  <div className="flex items-baseline space-x-2">
+                    <p className="text-3xl font-bold text-white">
+                      {(session as Session).user.verificationCount || 0}
+                    </p>
+                    <span className="text-slate-400 text-sm">verifications</span>
+                  </div>
+                </div>
+
+                {/* Fees Due */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <CreditCard className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-300">Fees Due</span>
+                  </div>
+                  <div className="flex items-baseline space-x-2">
+                    <p className="text-3xl font-bold text-white">
+                      ${((session as Session).user.verificationFeesDue || 0).toFixed(2)}
+                    </p>
+                    <span className="text-slate-400 text-sm">USD</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Information */}
+              <div className="pt-4 border-t border-slate-600">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Per-Verification Fee</p>
+                    <p className="text-slate-400 text-xs">Pay only for what you use</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-white">$5.00</p>
+                    <p className="text-slate-400 text-xs">per verification</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Information */}
+              {((session as Session).user.verificationFeesDue || 0) > 0 && (
+                <div className="bg-orange-900/30 border border-orange-700 rounded-lg p-3">
+                  <p className="text-orange-200 text-sm">
+                    💳 You have <strong>${((session as Session).user.verificationFeesDue || 0).toFixed(2)}</strong> in outstanding verification fees. Payment will be processed automatically.
+                  </p>
+                </div>
+              )}
+
+              {/* No Usage Information */}
+              {((session as Session).user.verificationCount || 0) === 0 && (
+                <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3">
+                  <p className="text-blue-200 text-sm">
+                    🔍 Start verifying credentials to see your usage statistics here. You'll be charged $5.00 per verification.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dashboard Client with KPIs and Activities */}
         <DashboardClient userId={(session as Session).user.id} />
       </div>
     </div>

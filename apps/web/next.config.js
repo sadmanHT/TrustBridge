@@ -4,7 +4,7 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  output: 'export',
+  // output: 'export', // Disabled to support server-side features like authentication
   trailingSlash: true,
   images: {
     unoptimized: true

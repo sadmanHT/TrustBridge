@@ -281,11 +281,12 @@ function VerifyPageContent() {
             error = 'Credential has been revoked';
           }
           
-          await fetch('/api/activity', {
+          const response = await fetch('/api/activity', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({
               type: 'VERIFY',
               docHash: verificationHash,
@@ -293,6 +294,22 @@ function VerifyPageContent() {
               error
             })
           });
+          
+          console.log('Verification activity recorded:', {
+            status: response.status,
+            ok: response.ok,
+            data: {
+              type: 'VERIFY',
+              docHash: verificationHash,
+              status,
+              error
+            }
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Failed to record verification activity:', errorData);
+          }
         } catch (activityError) {
           console.error('Failed to record verification activity:', activityError);
         }
@@ -307,7 +324,7 @@ function VerifyPageContent() {
     if (verificationError && verificationHash) {
       const recordErrorActivity = async () => {
         try {
-          await fetch('/api/activity', {
+          const response = await fetch('/api/activity', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -319,6 +336,22 @@ function VerifyPageContent() {
               error: 'Failed to verify credential on blockchain'
             })
           });
+          
+          console.log('Verification error activity recorded:', {
+            status: response.status,
+            ok: response.ok,
+            data: {
+              type: 'VERIFY',
+              docHash: verificationHash,
+              status: 'failed',
+              error: 'Failed to verify credential on blockchain'
+            }
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Failed to record verification error activity:', errorData);
+          }
         } catch (activityError) {
           console.error('Failed to record verification error activity:', activityError);
         }

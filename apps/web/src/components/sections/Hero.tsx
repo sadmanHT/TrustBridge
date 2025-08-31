@@ -4,12 +4,31 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 
-const Hero = () => {
+interface HeroProps {
+  onIssueClick?: () => void;
+  onVerifyClick?: () => void;
+}
+
+const Hero = ({ onIssueClick, onVerifyClick }: HeroProps) => {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handleIssueClick = () => {
+    if (onIssueClick) {
+      onIssueClick();
+    }
+    scrollToSection('main-content');
+  };
+
+  const handleVerifyClick = () => {
+    if (onVerifyClick) {
+      onVerifyClick();
+    }
+    scrollToSection('main-content');
   };
 
   return (
@@ -79,7 +98,7 @@ const Hero = () => {
               <Button
                 size="lg"
                 className="bg-accent-gradient hover:opacity-90 text-white font-semibold px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-105"
-                onClick={() => scrollToSection('issue-section')}
+                onClick={handleIssueClick}
               >
                 Issue Credential
               </Button>
@@ -87,7 +106,7 @@ const Hero = () => {
                 variant="outline"
                 size="lg"
                 className="border-2 border-slate-600 text-slate-100 hover:bg-slate-800 font-semibold px-8 py-4 rounded-lg transition-all duration-300 transform hover:scale-105"
-                onClick={() => scrollToSection('verify-section')}
+                onClick={handleVerifyClick}
               >
                 Verify Credential
               </Button>

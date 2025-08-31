@@ -39,12 +39,14 @@ export async function generateDiplomaPDF(data: DiplomaData): Promise<Uint8Array>
   const bodyFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // Colors
+  // Colors - Enhanced for better visibility
   const darkBlue = rgb(0.1, 0.2, 0.4);
   const lightBlue = rgb(0.2, 0.4, 0.7);
-  const gold = rgb(0.8, 0.7, 0.2);
-  const darkGray = rgb(0.2, 0.2, 0.2);
-  const lightGray = rgb(0.5, 0.5, 0.5);
+  const gold = rgb(1.0, 0.84, 0.0); // Brighter gold (#FFD700)
+  const white = rgb(1.0, 1.0, 1.0); // Pure white for text
+  const lightGray = rgb(0.9, 0.9, 0.9); // Much lighter gray
+  const shadowColor = rgb(0.0, 0.0, 0.0); // Black shadow
+  const overlayColor = rgb(0.0, 0.0, 0.0, 0.3); // Semi-transparent overlay
 
   // Draw gradient background (dark-friendly)
   // Create a subtle gradient effect with rectangles
@@ -80,11 +82,32 @@ export async function generateDiplomaPDF(data: DiplomaData): Promise<Uint8Array>
     borderWidth: 1,
   });
 
-  // Title "Digital Diploma"
-  const titleText = 'Digital Diploma';
-  const titleSize = 48;
+  // Title "Verification Certificate by TrustBridge" with background overlay
+  const titleText = 'Verification Certificate by TrustBridge';
+  const titleSize = 44;
+  const titleWidth = titleFont.widthOfTextAtSize(titleText, titleSize);
+  const titleX = width / 2 - (titleWidth / 2);
+  
+  // Background overlay for title
+  page.drawRectangle({
+    x: titleX - 20,
+    y: height - 95,
+    width: titleWidth + 40,
+    height: 50,
+    color: rgb(0.0, 0.0, 0.0, 0.4),
+  });
+  
+  // Strong shadow effect for title
   page.drawText(titleText, {
-    x: width / 2 - (titleFont.widthOfTextAtSize(titleText, titleSize) / 2),
+    x: titleX + 3,
+    y: height - 83,
+    size: titleSize,
+    font: titleFont,
+    color: shadowColor,
+  });
+  // Main title text in bright gold
+  page.drawText(titleText, {
+    x: titleX,
     y: height - 80,
     size: titleSize,
     font: titleFont,
@@ -99,52 +122,106 @@ export async function generateDiplomaPDF(data: DiplomaData): Promise<Uint8Array>
     color: lightBlue,
   });
 
-  // Certificate text
+  // Certificate text with better visibility
   const certText = 'This certifies that';
-  const certSize = 16;
+  const certSize = 18;
+  const certX = width / 2 - (bodyFont.widthOfTextAtSize(certText, certSize) / 2);
+  
+  // Shadow for certificate text
   page.drawText(certText, {
-    x: width / 2 - (bodyFont.widthOfTextAtSize(certText, certSize) / 2),
+    x: certX + 1,
+    y: height - 141,
+    size: certSize,
+    font: bodyFont,
+    color: shadowColor,
+  });
+  // Main certificate text in white
+  page.drawText(certText, {
+    x: certX,
     y: height - 140,
     size: certSize,
     font: bodyFont,
-    color: darkGray,
+    color: white,
   });
 
-  // Holder name (big)
-  const holderSize = 36;
+  // Holder name (big and prominent) with background
+  const holderSize = 44;
+  const holderWidth = boldFont.widthOfTextAtSize(holderName, holderSize);
+  const holderX = width / 2 - (holderWidth / 2);
+  
+  // Background overlay for holder name
+  page.drawRectangle({
+    x: holderX - 15,
+    y: height - 205,
+    width: holderWidth + 30,
+    height: 40,
+    color: rgb(0.0, 0.0, 0.0, 0.4),
+  });
+  
+  // Strong shadow for holder name
   page.drawText(holderName, {
-    x: width / 2 - (boldFont.widthOfTextAtSize(holderName, holderSize) / 2),
+    x: holderX + 2,
+    y: height - 192,
+    size: holderSize,
+    font: boldFont,
+    color: shadowColor,
+  });
+  // Main holder name in bright white
+  page.drawText(holderName, {
+    x: holderX,
     y: height - 190,
     size: holderSize,
     font: boldFont,
-    color: darkBlue,
+    color: white,
   });
 
-  // Credential title
+  // Credential title with enhanced visibility
   const credentialText = `has successfully completed: ${credentialTitle}`;
-  const credentialSize = 20;
+  const credentialSize = 24;
+  const credentialX = width / 2 - (bodyFont.widthOfTextAtSize(credentialText, credentialSize) / 2);
+  
+  // Shadow for credential text
   page.drawText(credentialText, {
-    x: width / 2 - (bodyFont.widthOfTextAtSize(credentialText, credentialSize) / 2),
+    x: credentialX + 1,
+    y: height - 241,
+    size: credentialSize,
+    font: bodyFont,
+    color: shadowColor,
+  });
+  // Main credential text in light gray
+  page.drawText(credentialText, {
+    x: credentialX,
     y: height - 240,
     size: credentialSize,
     font: bodyFont,
-    color: darkGray,
+    color: lightGray,
   });
 
-  // Issued date
+  // Issued date with better visibility
   const issuedDate = new Date(issuedAtISO).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
   const dateText = `Issued on ${issuedDate}`;
-  const dateSize = 14;
+  const dateSize = 16;
+  const dateX = width / 2 - (bodyFont.widthOfTextAtSize(dateText, dateSize) / 2);
+  
+  // Shadow for date text
   page.drawText(dateText, {
-    x: width / 2 - (bodyFont.widthOfTextAtSize(dateText, dateSize) / 2),
+    x: dateX + 1,
+    y: height - 281,
+    size: dateSize,
+    font: bodyFont,
+    color: shadowColor,
+  });
+  // Main date text in white
+  page.drawText(dateText, {
+    x: dateX,
     y: height - 280,
     size: dateSize,
     font: bodyFont,
-    color: lightGray,
+    color: white,
   });
 
   // Blockchain verification section
@@ -152,55 +229,103 @@ export async function generateDiplomaPDF(data: DiplomaData): Promise<Uint8Array>
   const leftColumnX = 60;
   const rightColumnX = width - 200;
 
-  // On-chain hash
-  const shortHash = `${docHash.slice(0, 10)}...${docHash.slice(-8)}`;
+  // On-chain hash with better visibility - show full hash
+  const fullHash = docHash;
+  // Shadow for hash label
+  page.drawText('On-chain hash:', {
+    x: leftColumnX + 1,
+    y: verificationY - 1,
+    size: 14,
+    font: boldFont,
+    color: shadowColor,
+  });
   page.drawText('On-chain hash:', {
     x: leftColumnX,
     y: verificationY,
-    size: 12,
+    size: 14,
     font: boldFont,
-    color: darkBlue,
+    color: white,
   });
-  page.drawText(shortHash, {
+  // Shadow for hash value
+  page.drawText(fullHash, {
+    x: leftColumnX + 1,
+    y: verificationY - 21,
+    size: 10,
+    font: bodyFont,
+    color: shadowColor,
+  });
+  page.drawText(fullHash, {
     x: leftColumnX,
     y: verificationY - 20,
     size: 10,
     font: bodyFont,
-    color: darkGray,
+    color: lightGray,
   });
 
-  // Issuer address
-  const shortIssuer = `${issuerAddress.slice(0, 8)}...${issuerAddress.slice(-6)}`;
+  // Issuer address with better visibility - show full issuer
+  const fullIssuer = issuerAddress;
+  // Shadow for issuer label
+  page.drawText('Issuer:', {
+    x: leftColumnX + 1,
+    y: verificationY - 51,
+    size: 14,
+    font: boldFont,
+    color: shadowColor,
+  });
   page.drawText('Issuer:', {
     x: leftColumnX,
     y: verificationY - 50,
-    size: 12,
+    size: 14,
     font: boldFont,
-    color: darkBlue,
+    color: white,
   });
-  page.drawText(shortIssuer, {
+  // Shadow for issuer value
+  page.drawText(fullIssuer, {
+    x: leftColumnX + 1,
+    y: verificationY - 71,
+    size: 10,
+    font: bodyFont,
+    color: shadowColor,
+  });
+  page.drawText(fullIssuer, {
     x: leftColumnX,
     y: verificationY - 70,
     size: 10,
     font: bodyFont,
-    color: darkGray,
+    color: lightGray,
   });
 
-  // Transaction link text
+  // Transaction link text with better visibility
   const shortTx = `${txHash.slice(0, 10)}...${txHash.slice(-8)}`;
+  // Shadow for transaction label
+  page.drawText('Transaction:', {
+    x: leftColumnX + 1,
+    y: verificationY - 101,
+    size: 14,
+    font: boldFont,
+    color: shadowColor,
+  });
   page.drawText('Transaction:', {
     x: leftColumnX,
     y: verificationY - 100,
-    size: 12,
+    size: 14,
     font: boldFont,
-    color: darkBlue,
+    color: white,
+  });
+  // Shadow for transaction value
+  page.drawText(shortTx, {
+    x: leftColumnX + 1,
+    y: verificationY - 121,
+    size: 12,
+    font: bodyFont,
+    color: shadowColor,
   });
   page.drawText(shortTx, {
     x: leftColumnX,
     y: verificationY - 120,
-    size: 10,
+    size: 12,
     font: bodyFont,
-    color: lightBlue,
+    color: lightGray,
   });
 
   // Embed QR code
@@ -270,14 +395,22 @@ export async function generateDiplomaPDF(data: DiplomaData): Promise<Uint8Array>
     }
   }
 
-  // Footer text
+  // Footer text with better visibility
   const footerText = 'Verified on TrustBridge Blockchain';
+  // Shadow for footer text
   page.drawText(footerText, {
-    x: width / 2 - (bodyFont.widthOfTextAtSize(footerText, 10) / 2),
+    x: width / 2 - (boldFont.widthOfTextAtSize(footerText, 14) / 2) + 1,
+    y: 39,
+    size: 14,
+    font: boldFont,
+    color: shadowColor,
+  });
+  page.drawText(footerText, {
+    x: width / 2 - (boldFont.widthOfTextAtSize(footerText, 14) / 2),
     y: 40,
-    size: 10,
-    font: bodyFont,
-    color: lightGray,
+    size: 14,
+    font: boldFont,
+    color: white,
   });
 
   // Serialize the PDF document to bytes
