@@ -2,12 +2,17 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false, // Temporarily disabled to prevent WalletConnect double initialization
   swcMinify: true,
   // output: 'export', // Disabled to support server-side features like authentication
   trailingSlash: true,
   images: {
     unoptimized: true
+  },
+  
+  // Suppress environment validation warnings in development
+  env: {
+    SKIP_ENV_VALIDATION: process.env.NODE_ENV === 'development' ? 'true' : 'false'
   },
   
   // Existing configuration

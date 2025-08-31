@@ -186,8 +186,8 @@ export async function GET(request: NextRequest) {
     // Include all activities (both user and anonymous) for dashboard view
     const where: WhereClause = {}
     
-    // Add user filter only for ISSUE/REVOKE activities or when specifically requested
-    if (type === 'ISSUE' || type === 'REVOKE' || searchParams.get('userOnly') === 'true') {
+    // Add user filter only when specifically requested
+    if (searchParams.get('userOnly') === 'true') {
       where.userId = (session as Session).user.id
     }
     

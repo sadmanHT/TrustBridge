@@ -5,7 +5,7 @@ import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from './providers/AuthProvider';
-import { config } from '../lib/wagmi';
+import { config, sepolia } from '../lib/wagmi';
 import { initializeWalletListeners } from '../lib/walletListeners';
 import { useState, useEffect } from 'react';
 import '@rainbow-me/rainbowkit/styles.css';
@@ -26,44 +26,47 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // Use useState to ensure the QueryClient is created only once per component instance
   const [queryClient] = useState(() => makeQueryClient());
 
-  // Suppress WalletConnect warnings on component mount
+  // Suppress WalletConnect warnings and initialize wallet listeners
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const originalWarn = console.warn;
-      const originalError = console.error;
-      
-      console.warn = function(...args) {
-        const message = String(args[0] || '');
-        if (
-          message.includes('WalletConnect Core is already initialized') ||
-          message.includes('This is probably a mistake and can lead to unexpected behavior') ||
-          message.includes('Init() was called')
-        ) {
-          return;
-        }
-        return originalWarn.apply(this, args);
-      };
-      
-      console.error = function(...args) {
-        const message = String(args[0] || '');
-        if (
-          message.includes('WalletConnect Core is already initialized') ||
-          message.includes('Init() was called')
-        ) {
-          return;
-        }
-        return originalError.apply(this, args);
-      };
-      
-      // Initialize wallet listeners
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    
+    // Suppress WalletConnect initialization warnings
+    console.warn = function(...args) {
+      const message = String(args[0] || '');
+      if (
+        message.includes('WalletConnect Core is already initialized') ||
+        message.includes('This is probably a mistake and can lead to unexpected behavior') ||
+        message.includes('Init() was called') ||
+        message.includes('WalletConnect Core is already initialized. This is probably a mistake a')
+      ) {
+        return;
+      }
+      return originalWarn.apply(this, args);
+    };
+    
+    console.error = function(...args) {
+      const message = String(args[0] || '');
+      if (
+        message.includes('WalletConnect Core is already initialized') ||
+        message.includes('Init() was called')
+      ) {
+        return;
+      }
+      return originalError.apply(this, args);
+    };
+    
+    // Initialize wallet listeners after a short delay to avoid race conditions
+    const timer = setTimeout(() => {
       initializeWalletListeners();
-      
-      // Cleanup function to restore original console methods
-      return () => {
-        console.warn = originalWarn;
-        console.error = originalError;
-      };
-    }
+    }, 100);
+    
+    // Cleanup function
+    return () => {
+      clearTimeout(timer);
+      console.warn = originalWarn;
+      console.error = originalError;
+    };
   }, []);
 
   return (
@@ -77,7 +80,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       >
         <QueryClientProvider client={queryClient}>
           <WagmiProvider config={config}>
-            <RainbowKitProvider>
+            <RainbowKitProvider
+              modalSize="compact"
+              initialChain={sepolia}
+              showRecentTransactions={true}
+            >
               {children}
             </RainbowKitProvider>
           </WagmiProvider>

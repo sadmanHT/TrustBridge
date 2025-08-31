@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { User, Settings, LogOut, LayoutDashboard } from 'lucide-react'
+import { User, Settings, LogOut, LayoutDashboard, ShoppingBag } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export function UserMenu() {
@@ -103,6 +103,12 @@ export function UserMenu() {
           <Link href="/settings" className="flex items-center w-full px-2 py-1.5">
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="text-slate-200 hover:bg-slate-700 cursor-pointer p-0">
+          <Link href="/shop" className="flex items-center w-full px-2 py-1.5">
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            <span>Shop</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-slate-700" />

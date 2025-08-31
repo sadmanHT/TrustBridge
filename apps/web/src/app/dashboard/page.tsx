@@ -36,23 +36,45 @@ export default async function DashboardPage() {
             <CardHeader>
               <CardTitle className="text-white flex items-center space-x-2">
                 <CreditCard className="h-5 w-5" />
-                <span>Subscription Plan</span>
+                <span>Issuer Subscription</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Issuer Status */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-300">Issuer Status</span>
+                  </div>
+                  <Badge className="bg-green-600 text-white">
+                    ✅ Active
+                  </Badge>
+                </div>
+
                 {/* Subscription Status */}
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm font-medium text-slate-300">Status</span>
+                    <span className="text-sm font-medium text-slate-300">Subscription</span>
                   </div>
                   <Badge 
                     variant={(session as Session).user.subscriptionStatus === 'trial' ? 'default' : 'secondary'}
-                    className={(session as Session).user.subscriptionStatus === 'trial' ? 'bg-green-600 text-white' : ''}
+                    className={(session as Session).user.subscriptionStatus === 'trial' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'}
                   >
-                    {(session as Session).user.subscriptionStatus === 'trial' ? '🎯 Free Trial' : '💳 Active Subscription'}
+                    {(session as Session).user.subscriptionStatus === 'trial' ? '🎯 Free Trial' : '💳 Active'}
                   </Badge>
+                </div>
+
+                {/* Valid Until */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-300">Valid Until</span>
+                  </div>
+                  <p className="text-white font-mono text-sm">
+                    {new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                  </p>
                 </div>
 
                 {/* Trial End Date */}
@@ -90,7 +112,7 @@ export default async function DashboardPage() {
                     <p className="text-slate-400 text-xs">Unlimited credential issuance</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-white">$1,200</p>
+                    <p className="text-2xl font-bold text-white">৳150,000</p>
                     <p className="text-slate-400 text-xs">per year</p>
                   </div>
                 </div>
@@ -118,7 +140,7 @@ export default async function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Verification Count */}
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
@@ -130,6 +152,20 @@ export default async function DashboardPage() {
                       {(session as Session).user.verificationCount || 0}
                     </p>
                     <span className="text-slate-400 text-sm">verifications</span>
+                  </div>
+                </div>
+
+                {/* Remaining Balance */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <CreditCard className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-300">Remaining Balance</span>
+                  </div>
+                  <div className="flex items-baseline space-x-2">
+                    <p className="text-3xl font-bold text-green-400">
+                      ৳980
+                    </p>
+                    <span className="text-slate-400 text-sm">BDT</span>
                   </div>
                 </div>
 

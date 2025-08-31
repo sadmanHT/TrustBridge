@@ -220,7 +220,7 @@ export default function RegisterPage() {
                     />
                     <div>
                       <div className="text-slate-200 font-medium">Verifier (Employer/Agency)</div>
-                      <div className="text-sm text-slate-400">Verify credentials and certificates. Pay ৳98 per verification.</div>
+                      <div className="text-sm text-slate-400">Verify credentials and certificates. Pay ৳980 for 10 verifications (can buy more later).</div>
                     </div>
                   </label>
                 </div>
@@ -229,9 +229,14 @@ export default function RegisterPage() {
               {/* Payment Verification Section */}
               <div className="space-y-4 pt-4 border-t border-slate-600">
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold text-white mb-2">Payment for Verification (৳ 50)</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    Payment for {role === 'issuer' ? 'Annual Subscription' : 'Verification Package'} 
+                    (৳ {role === 'issuer' ? '150,000' : '980'})
+                  </h3>
                   <p className="text-sm text-slate-400 mb-4">
-                    Enter your bKash/Nagad transaction ID. For now, we assume payments are completed.
+                    {role === 'issuer' 
+                      ? 'Enter your bKash/Nagad transaction ID for yearly subscription. 6-month free trial included.' 
+                      : 'Enter your bKash/Nagad transaction ID for 10 verifications package. You can buy more later.'}
                   </p>
                 </div>
                 

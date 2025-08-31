@@ -25,6 +25,11 @@ const contractABI = [
         "name": "issuer",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "approved",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "outputs": [],
@@ -164,7 +169,7 @@ async function main() {
       address: contractAddress,
       abi: contractABI,
       functionName: 'approveIssuer',
-      args: [validAddress]
+      args: [validAddress, true]
     });
     
     console.log(`📋 Transaction submitted: ${txHash}`);

@@ -5,6 +5,7 @@ import contractConfig from '../contractConfig.json';
 import {
   metaMaskWallet,
   injectedWallet,
+  walletConnectWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { getEnvConfigSafe } from './env';
 
@@ -29,6 +30,12 @@ export const config = getDefaultConfig({
       wallets: [
         metaMaskWallet,
         injectedWallet,
+      ],
+    },
+    {
+      groupName: 'Other',
+      wallets: [
+        walletConnectWallet,
       ],
     },
   ],
